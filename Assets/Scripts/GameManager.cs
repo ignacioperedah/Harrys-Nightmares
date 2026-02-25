@@ -84,12 +84,41 @@ public class GameManager : MonoBehaviour
     public int highS;
     public Vector3 vector;
 
-    public int score = 0;
+    private int _score = 0;
+
+    public int score
+    {
+        get => _score;
+        set
+        {
+            _score = value;
+            UpdateDifficulty();
+            
+        }
+
+    }
+
+
     public int vidas = 1;
     public float contador = 20.0f;
     public float contadorbuckbeak = 15.0f;
     public float contadorpatronus = 10.0f;
     public float transparenteHarry = 1;
+
+    // Tabla de dificultad: umbral -> valor de delay (ms)
+    private readonly (int threshold, int delay)[] difficultySteps = new (int, int)[]
+    {
+        (100, 113),
+        (90, 150),
+        (80, 200),
+        (70, 267),
+        (60, 356),
+        (50, 475),
+        (40, 633),
+        (30, 844),
+        (20, 1125),
+        (10, 1500)
+    };
 
     public void Start()
     {
@@ -277,6 +306,22 @@ public class GameManager : MonoBehaviour
         repeatvideo = true;
         vidas = 1;
         harry.SetPositionAndRotation(vector, Quaternion.identity);
+    }
+
+    //Velocidad de aparicion dementores
+    void UpdateDifficulty()
+    {
+        // valor por defecto si no se alcanza ningún umbral
+        delay = 2000;
+
+        foreach (var step in difficultySteps)
+        {
+            if (score > step.threshold)
+            {
+                delay = step.delay;
+                break;
+            }
+        }
     }
 
     // Update is called once per frame
@@ -695,53 +740,9 @@ public class GameManager : MonoBehaviour
             {
                 gameOver = true;
             }
-
-            
-
-            //Velocidad de aparicion dementores
-            if (score > 10)
-            {
-                delay = 1500;
-                if (score > 20)
-                {
-                    delay = 1125;
-                    if (score > 30)
-                    {
-                        delay = 844;
-                        if (score > 40)
-                        {
-                            delay = 633;
-                            if (score > 50)
-                            {
-                                delay = 475;
-                                if (score > 60)
-                                {
-                                    delay = 356;
-                                    if (score > 70)
-                                    {
-                                        delay = 267;
-                                        if (score > 80)
-                                        {
-                                            delay = 200;
-                                            if (score > 90)
-                                            {
-                                                delay = 150;
-                                                if (score > 100)
-                                                {
-                                                    delay = 113;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                }
-            }
         }
     }
+
     IEnumerator EscobaTimer()
     {
 
