@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a141d5dbe61d45c479bf72e5bd8e757d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - harry: {instanceID: 0}
+  - patronumL: {fileID: 1605554837687404926, guid: 75f70149706e7934d8acc37e8a1b4cac, type: 3}
+  - patronumR: {fileID: 1335539750459184588, guid: 6f28098fce9ebf94cb8a57f0fd90e37d, type: 3}
+  - dementor: {fileID: 7090532858897402169, guid: 778faa16a7c52fd4e8ed32ea54688844, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
