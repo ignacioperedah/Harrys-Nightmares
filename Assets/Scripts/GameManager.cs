@@ -1,11 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using UnityEngine.Advertisements;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -14,37 +10,20 @@ public class GameManager : MonoBehaviour
     public GameObject patronumR;
     public GameObject patronumU;
     public GameObject dementor;
-    public GameObject menuInicio;
-    public GameObject menuGameOver;
     public GameObject menuOptions;
-    public GameObject menuPause;
-    public GameObject menuUI;
-    public GameObject SCORE;
-    public GameObject BY;
-    public GameObject enjuego;
-    public GameObject enmenus;
     public GameObject powerupvida;
     public GameObject powerupescoba;
     public GameObject poweruppatronus;
     public GameObject powerupbuckbeak;
-    public GameObject counterescoba;
     public GameObject harrypatronus;
     public GameObject patronusgrande;
-    public GameObject buttonsUI;
     public GameObject bJump;
     public GameObject bSpell;
-    public GameObject MenuVideo;
-    public GameObject player;
 
     public Text contadorescoba;
 
-    private Text Kcount;
     public Text scoremuerte;
     public Text Hscore;
-
-    public GameObject vida1;
-    public GameObject vida2;
-    public GameObject vida3;
 
     public AudioSource audioPatronus;
 
@@ -79,10 +58,12 @@ public class GameManager : MonoBehaviour
 
     public byte ActDemen = 0;
     public int ActPowerUp = 0;
-    int delay = 2000;
+    [SerializeField] int delay = 2000;
     public int highscore;
     public int highS;
     public Vector3 vector;
+
+    [SerializeField] private EnemySpawner spawner;
 
     private int _score = 0;
 
@@ -93,11 +74,12 @@ public class GameManager : MonoBehaviour
         {
             _score = value;
             UpdateDifficulty();
-            
+            if (spawner != null) spawner.UpdateSpawnRate(delay);
+            // actualizar UI inmediatamente cuando cambie la puntuación
+            if (UIManager.Instance != null) UIManager.Instance.UpdateScore(_score);
         }
 
     }
-
 
     public int vidas = 1;
     public float contador = 20.0f;
@@ -130,11 +112,16 @@ public class GameManager : MonoBehaviour
         highS = highscore;
 
         Time.timeScale = 1f;
+
+        // Mostrar menú inicial (si existe UIManager)
+        if (UIManager.Instance != null) UIManager.Instance.ShowStartMenu();
     }
 
     public void StartGame()
     {
         start = true;
+        if (spawner != null) spawner.StartSpawning(delay);
+        if (UIManager.Instance != null) UIManager.Instance.ShowGameplayUI();
     }
 
     public void Exit()
@@ -144,21 +131,19 @@ public class GameManager : MonoBehaviour
 
     public void Restart()
     {
-        MenuVideo.SetActive(false);
+        if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(false);
         reset = true;
-
+        if (spawner != null) spawner.StartSpawning(delay);
     }
 
     public void Options()
     {
-        menuOptions.SetActive(true);
-        menuInicio.SetActive(false);
+        if (UIManager.Instance != null) UIManager.Instance.ShowOptions(true);
     }
 
     public void OptionsBack()
     {
-        menuOptions.SetActive(false);
-        menuInicio.SetActive(true);
+        if (UIManager.Instance != null) UIManager.Instance.ShowOptions(false);
     }
 
     public void ResetHS()
@@ -168,19 +153,21 @@ public class GameManager : MonoBehaviour
 
     public void Pause()
     {
-        menuPause.SetActive(true);
-        menuUI.SetActive(false);
+        if (UIManager.Instance != null) UIManager.Instance.SetPauseUI(true);
         Time.timeScale = 0f;
         enpausa = true;
+
+        if (spawner != null) spawner.StopSpawning();
     }
 
     public void Resume()
     {
-        menuPause.SetActive(false);
-        menuUI.SetActive(true);
-        buttonsUI.SetActive(true);
+        if (UIManager.Instance != null) UIManager.Instance.SetPauseUI(false);
+        if (UIManager.Instance != null) UIManager.Instance.SetButtonsActive(true);
         Time.timeScale = 1f;
         enpausa = false;
+
+        if (spawner != null) spawner.StartSpawning(delay);
     }
 
     public void Home()
@@ -191,20 +178,18 @@ public class GameManager : MonoBehaviour
 
     public void Escoba()
     {
-        counterescoba.SetActive(true);
-        contadorescoba.enabled = true;
-        contadorescoba.text = $"{contador}";
+        if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(true);
+        if (UIManager.Instance != null) UIManager.Instance.UpdateCounterText($"{contador}");
         StartCoroutine(EscobaTimer());
     }
 
     public void Buckbeak()
     {
-        counterescoba.SetActive(true);
-        contadorescoba.enabled = true;
-        contadorescoba.text = $"{contadorbuckbeak}";
+        if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(true);
+        if (UIManager.Instance != null) UIManager.Instance.UpdateCounterText($"{contadorbuckbeak}");
         StartCoroutine(BuckbeakTimer());
     }
-    
+
     public void Patronus()
     {
         harrypatronus.SetActive(true);
@@ -229,7 +214,7 @@ public class GameManager : MonoBehaviour
         {
             rbHarry.AddForce(new Vector2(0, 400));
         }
-        
+
     }
 
     public void saltoNot()
@@ -292,16 +277,16 @@ public class GameManager : MonoBehaviour
     public void CancelVideo()
     {
         cancelvideo = true;
-        MenuVideo.SetActive(false);
-        player.SetActive(true);
-        menuUI.SetActive(true);
+        if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(false);
+        if (UIManager.Instance != null) UIManager.Instance.SetPlayerActive(true);
+        if (UIManager.Instance != null) UIManager.Instance.SetMenuUIActive(true);
     }
 
     public void VideoReward()
     {
-        MenuVideo.SetActive(false);
-        player.SetActive(true);
-        menuUI.SetActive(true);
+        if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(false);
+        if (UIManager.Instance != null) UIManager.Instance.SetPlayerActive(true);
+        if (UIManager.Instance != null) UIManager.Instance.SetMenuUIActive(true);
         Resume();
         repeatvideo = true;
         vidas = 1;
@@ -311,9 +296,6 @@ public class GameManager : MonoBehaviour
     //Velocidad de aparicion dementores
     void UpdateDifficulty()
     {
-        // valor por defecto si no se alcanza ningún umbral
-        delay = 2000;
-
         foreach (var step in difficultySteps)
         {
             if (score > step.threshold)
@@ -325,19 +307,16 @@ public class GameManager : MonoBehaviour
     }
 
     // Update is called once per frame
-    public async void Update()
+    public void Update()
     {
         if (Input.GetKeyDown(KeyCode.Return))
         {
             StartGame();
         }
 
-        
         if (gameOver == true)
         {
-            enjuego.SetActive(false);
-            menuUI.SetActive(false);
-            menuGameOver.SetActive(true);
+            // Delegamos toda la UI al UIManager
             PatronusExit();
 
             buttonJump = false;
@@ -351,18 +330,13 @@ public class GameManager : MonoBehaviour
 
             if (score > highS)
             {
-                Hscore = GameObject.FindGameObjectWithTag("HS").GetComponent<Text>();
-                Hscore.text = $"{score}";
+                highS = score;
                 PlayerPrefs.SetInt("highscore", score);
             }
-            
-            else
-            {
-                Hscore = GameObject.FindGameObjectWithTag("HS").GetComponent<Text>();
-                Hscore.text = $"{highS}";
-            } 
 
-            if(Input.GetKeyDown(KeyCode.Escape))
+            if (UIManager.Instance != null) UIManager.Instance.ShowGameOver(score, highS);
+
+            if (Input.GetKeyDown(KeyCode.Escape))
             {
                 Home();
             }
@@ -374,16 +348,17 @@ public class GameManager : MonoBehaviour
             {
                 score = 0;
                 vidas = 1;
-                enjuego.SetActive(true);
-                counterescoba.SetActive(false);
-                MenuVideo.SetActive(false);
-                player.SetActive(true);
-                buttonsUI.SetActive(true);
+                if (UIManager.Instance != null) UIManager.Instance.ShowGameplayUI();
+                if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(false);
+                if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(false);
+                if (UIManager.Instance != null) UIManager.Instance.SetPlayerActive(true);
+                if (UIManager.Instance != null) UIManager.Instance.SetButtonsActive(true);
+
                 cancelvideo = false;
                 enpausa = false;
                 start = true;
                 gameOver = false;
-                menuGameOver.SetActive(false);
+                if (spawner != null) spawner.StartSpawning(delay);
                 harry.SetPositionAndRotation(vector, Quaternion.identity);
                 delay = 2000;
                 contador = 20;
@@ -393,15 +368,13 @@ public class GameManager : MonoBehaviour
 
         if (enpausa == true)
         {
-            menuUI.SetActive(false);
-            buttonsUI.SetActive(false);
-
-            if(Input.GetKeyDown(KeyCode.Return))
+            // input handling sigue aquí
+            if (Input.GetKeyDown(KeyCode.Return))
             {
                 Resume();
             }
 
-            if(Input.GetKeyDown(KeyCode.Escape))
+            if (Input.GetKeyDown(KeyCode.Escape))
             {
                 Home();
             }
@@ -424,18 +397,14 @@ public class GameManager : MonoBehaviour
 
         if (start == true && gameOver == false)
         {
+            // Delegar UI a UIManager
+            if (UIManager.Instance != null) UIManager.Instance.ShowGameplayUI();
+            // actualizar score en UI
+            if (UIManager.Instance != null) UIManager.Instance.UpdateScore(score);
 
-            menuInicio.SetActive(false);
-            enmenus.SetActive(false);
-            SCORE.SetActive(true);
-            enjuego.SetActive(true);
-            menuUI.SetActive(true);
             reset = false;
-            Kcount = GameObject.FindGameObjectWithTag("Score").GetComponent<Text>();
 
-            Kcount.text = $"Score: {score}";
-            
-            if(Input.GetKeyDown(KeyCode.Escape))
+            if (Input.GetKeyDown(KeyCode.Escape))
             {
                 Pause();
             }
@@ -465,147 +434,90 @@ public class GameManager : MonoBehaviour
                 animHarry.SetBool("up", false);
             }
 
-            //Powerups con diferentes condiciones para que no aparezcan al tiempo en que estan siendo usados
-
+            //Powerups...
             if (score % 10 == 0 && ActPowerUp == 0 && score != 0)
             {
                 ActPowerUp++;
 
-                if (powerupbuckbeakbool == false)
+                if (!powerupbuckbeakbool)
                 {
-                    if (powerupescobabool == false)
+                    if (!powerupescobabool)
                     {
-                        if (superpatronus == true)
+                        if (superpatronus)
                         {
                             byte rnd = (byte)Random.Range(0, 2.99f);
 
-                            if (rnd == 0)
-                            {
-                                Instantiate(powerupvida, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                            }
-
-                            if (rnd == 1)
-                            {
-                                Instantiate(powerupescoba, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                            }
-
-                            if (rnd == 2)
-                            {
-                                Instantiate(powerupbuckbeak, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                            }
+                            if (rnd == 0) Instantiate(powerupvida, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
+                            if (rnd == 1) Instantiate(powerupescoba, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
+                            if (rnd == 2) Instantiate(powerupbuckbeak, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
                         }
-
                         else
                         {
                             byte rnd = (byte)Random.Range(0, 3.99f);
-
-                            if (rnd == 0)
-                            {
-                                Instantiate(powerupvida, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                            }
-
-                            if (rnd == 1)
-                            {
-                                Instantiate(powerupescoba, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                            }
-
-                            if (rnd == 2)
-                            {
-                                Instantiate(poweruppatronus, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                            }
-
-                            if (rnd == 3)
-                            {
-                                Instantiate(powerupbuckbeak, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                            }
+                            if (rnd == 0) Instantiate(powerupvida, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
+                            if (rnd == 1) Instantiate(powerupescoba, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
+                            if (rnd == 2) Instantiate(poweruppatronus, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
+                            if (rnd == 3) Instantiate(powerupbuckbeak, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
                         }
-
                     }
-
-                    if (powerupescobabool == true)
+                    else // powerupescobabool == true
                     {
-                        if (superpatronus == true)
-                        {
-                            Instantiate(powerupvida, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                        }
-
+                        if (superpatronus) Instantiate(powerupvida, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
                         else
                         {
                             byte rnd = (byte)Random.Range(0, 1.99f);
-
-                            if (rnd == 0)
-                            {
-                                Instantiate(powerupvida, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                            }
-
-                            if (rnd == 1)
-                            {
-                                Instantiate(poweruppatronus, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                            }
+                            if (rnd == 0) Instantiate(powerupvida, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
+                            if (rnd == 1) Instantiate(poweruppatronus, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
                         }
                     }
                 }
 
-                if (powerupbuckbeakbool == true)
+                if (powerupbuckbeakbool)
                 {
-                    if (superpatronus == true)
-                    {
-                        Instantiate(powerupvida, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                    }
-
+                    if (superpatronus) Instantiate(powerupvida, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
                     else
                     {
                         byte rnd = (byte)Random.Range(0, 1.99f);
-
-                        if (rnd == 0)
-                        {
-                            Instantiate(powerupvida, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                        }
-
-                        if (rnd == 1)
-                        {
-                            Instantiate(poweruppatronus, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
-                        }
-
+                        if (rnd == 0) Instantiate(powerupvida, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
+                        if (rnd == 1) Instantiate(poweruppatronus, new Vector3(Random.Range(-9, 9), 6.5f, 0), Quaternion.identity);
                     }
                 }
             }
 
-            if (powerupescobabool == true)
+            // Counter UI
+            if (powerupescobabool)
             {
-                contadorescoba.text = $"{contador}";
-                bJump.SetActive(false);
+                if (UIManager.Instance != null) UIManager.Instance.UpdateCounterText($"{contador}");
+                if (UIManager.Instance != null) UIManager.Instance.SetJumpButtonActive(false);
             }
             else
             {
-                bJump.SetActive(true);
+                if (UIManager.Instance != null) UIManager.Instance.SetJumpButtonActive(true);
             }
 
             if (contador <= 0)
             {
                 powerupescobabool = false;
-                contadorescoba.enabled = false;
-                counterescoba.SetActive(false);
+                if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(false);
                 contador = 20;
             }
 
-            if (powerupbuckbeakbool == true)
+            if (powerupbuckbeakbool)
             {
-                contadorescoba.text = $"{contadorbuckbeak}";
-                bJump.SetActive(false);
-                bSpell.SetActive(false);
+                if (UIManager.Instance != null) UIManager.Instance.UpdateCounterText($"{contadorbuckbeak}");
+                if (UIManager.Instance != null) UIManager.Instance.SetJumpButtonActive(false);
+                if (UIManager.Instance != null) UIManager.Instance.SetSpellButtonActive(false);
             }
-            if (powerupbuckbeakbool == false && powerupescobabool == false)
+            if (!powerupbuckbeakbool && !powerupescobabool)
             {
-                bJump.SetActive(true);
-                bSpell.SetActive(true);
+                if (UIManager.Instance != null) UIManager.Instance.SetJumpButtonActive(true);
+                if (UIManager.Instance != null) UIManager.Instance.SetSpellButtonActive(true);
             }
 
             if (contadorbuckbeak <= 0)
             {
                 powerupbuckbeakbool = false;
-                contadorescoba.enabled = false;
-                counterescoba.SetActive(false);
+                if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(false);
                 contadorbuckbeak = 15;
             }
 
@@ -614,125 +526,42 @@ public class GameManager : MonoBehaviour
                 ActPowerUp = 0;
             }
 
-            if (powerupescobabool == false)
+            if (!powerupescobabool)
             {
-                //Disparo a la izquierda
-                if ((Input.GetKeyDown(KeyCode.Z)) && goLeft == true && Up == false)
-                {
-                    Instantiate(patronumL, harry.transform.position + new Vector3(-0.6f, -0.1f, 0), Quaternion.identity);
-                }
-
-                //Disparo a la derecha
-                if ((Input.GetKeyDown(KeyCode.Z)) && goRight == true && Up == false)
-                {
-                    Instantiate(patronumR, harry.transform.position + new Vector3(0.6f, -0.1f, 0), Quaternion.identity);
-                }
-
-                //Disparo arriba por la derecha
-                if ((Input.GetKeyDown(KeyCode.Z)) && goRight == true && Up == true && salto == false)
-                {
-                    Instantiate(patronumU, harry.transform.position + new Vector3(0.2f, 0.7f, 0), Quaternion.identity);
-                }
-
-                //Disparo arriba a la izquierda
-                if ((Input.GetKeyDown(KeyCode.Z)) && goLeft == true && Up == true && salto == false)
-                {
-                    Instantiate(patronumU, harry.transform.position + new Vector3(-0.2f, 0.7f, 0), Quaternion.identity);
-                }
+                if ((Input.GetKeyDown(KeyCode.Z)) && goLeft == true && Up == false) Instantiate(patronumL, harry.transform.position + new Vector3(-0.6f, -0.1f, 0), Quaternion.identity);
+                if ((Input.GetKeyDown(KeyCode.Z)) && goRight == true && Up == false) Instantiate(patronumR, harry.transform.position + new Vector3(0.6f, -0.1f, 0), Quaternion.identity);
+                if ((Input.GetKeyDown(KeyCode.Z)) && goRight == true && Up == true && salto == false) Instantiate(patronumU, harry.transform.position + new Vector3(0.2f, 0.7f, 0), Quaternion.identity);
+                if ((Input.GetKeyDown(KeyCode.Z)) && goLeft == true && Up == true && salto == false) Instantiate(patronumU, harry.transform.position + new Vector3(-0.2f, 0.7f, 0), Quaternion.identity);
+            }
+            else
+            {
+                if ((Input.GetKeyDown(KeyCode.Z)) && goLeft == true) Instantiate(patronumL, harry.transform.position + new Vector3(-1.6f, 0.1f, 0), Quaternion.identity);
+                if ((Input.GetKeyDown(KeyCode.Z)) && goRight == true) Instantiate(patronumR, harry.transform.position + new Vector3(1.6f, 0.1f, 0), Quaternion.identity);
             }
 
-            if (powerupescobabool == true)
-            {
-                //Disparo a la izquierda
-                if ((Input.GetKeyDown(KeyCode.Z)) && goLeft == true)
-                {
-                    Instantiate(patronumL, harry.transform.position + new Vector3(-1.6f, 0.1f, 0), Quaternion.identity);
-                }
-
-                //Disparo a la derecha
-                if ((Input.GetKeyDown(KeyCode.Z)) && goRight == true)
-                {
-                    Instantiate(patronumR, harry.transform.position + new Vector3(1.6f, 0.1f, 0), Quaternion.identity);
-                }
-            }
-            //Crear dementores
-            if (ActDemen == 0 && enpausa == false)
-            {
-                byte rnd = (byte)Random.Range(0, 1.99f);
-
-                if (rnd == 0)
-                {
-                    float randomDM = Random.Range(-10, harry.transform.position.x - 3);
-                    float randomN = Random.Range(0.05f, 5);
-                    Instantiate(dementor, new Vector3(randomDM, randomN, 0), Quaternion.identity);
-                    ActDemen = (byte)(ActDemen + 1);
-                    await Task.Delay(delay);
-                    ActDemen = (byte)(ActDemen - 1);
-                }
-
-                if (rnd == 1)
-                {
-                    float randomDM = Random.Range(harry.transform.position.x + 3, 10);
-                    float randomN = Random.Range(0.05f, 5);
-                    Instantiate(dementor, new Vector3(randomDM, randomN, 0), Quaternion.identity);
-                    ActDemen = (byte)(ActDemen + 1);
-                    await Task.Delay(delay);
-                    ActDemen = (byte)(ActDemen - 1);
-                }
-            }
+            // Vidas via UIManager
+            if (UIManager.Instance != null) UIManager.Instance.UpdateLives(vidas);
 
             if (vidas != 0)
             {
-                if (vidas >= 1)
-                {
-                    vida1.SetActive(true);
-                }
-
-                else
-                {
-                    vida1.SetActive(false);
-                }
-
-                if (vidas >= 2)
-                {
-                    vida2.SetActive(true);
-                }
-
-                else
-                {
-                    vida2.SetActive(false);
-                }
-
-                if (vidas >= 3)
-                {
-                    vida3.SetActive(true);
-                }
-
-                else
-                {
-                    vida3.SetActive(false);
-                }
-
-                if (vidas > 3)
-                {
-                    vidas = 3;
-                }
-            }
-
-            else
-            {
-                vida1.SetActive(false);
+                if (vidas > 3) vidas = 3;
             }
 
             if (vidas <= 0 && repeatvideo == false)
             {
-                enpausa = true;
-                player.SetActive(false);
-                MenuVideo.SetActive(true);
-                menuUI.SetActive(false);
+                // Si el jugador ya pulsó "Cancel", no reabrimos el menú de video;
+                // en su lugar vamos directamente a GameOver.
                 if (cancelvideo)
                 {
                     gameOver = true;
+                }
+                else
+                {
+                    enpausa = true;
+                    if (UIManager.Instance != null) UIManager.Instance.SetPlayerActive(false);
+                    if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(true);
+                    if (UIManager.Instance != null) UIManager.Instance.SetMenuUIActive(false);
+                    if (spawner != null) spawner.StopSpawning();
                 }
             }
 
@@ -746,13 +575,13 @@ public class GameManager : MonoBehaviour
     IEnumerator EscobaTimer()
     {
 
-        while(contador > 5)
+        while (contador > 5)
         {
             yield return new WaitForSeconds(1);
             contador--;
         }
 
-        while(contador <= 5 && contador >= 0)
+        while (contador <= 5 && contador >= 0)
         {
             RendHarry.color = new Color(1f, 1f, 1f, 0.5f);
             yield return new WaitForSeconds(0.5f);

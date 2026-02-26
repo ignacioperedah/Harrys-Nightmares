@@ -870,7 +870,7 @@ GameObject:
   - component: {fileID: 132682468}
   - component: {fileID: 132682467}
   m_Layer: 5
-  m_Name: ButtonResume
+  m_Name: ButtonReset
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3864,7 +3864,7 @@ CanvasRenderer:
   m_CullTransparentMesh: 1
 --- !u!95 &616639403
 Animator:
-  serializedVersion: 3
+  serializedVersion: 5
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -3877,10 +3877,12 @@ Animator:
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorControllerStateOnDisable: 0
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &619610040
 GameObject:
   m_ObjectHideFlags: 0
@@ -5102,7 +5104,7 @@ GameObject:
   m_Component:
   - component: {fileID: 821270145}
   m_Layer: 5
-  m_Name: InyOp
+  m_Name: EnMenus
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6118,7 +6120,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1011790347}
   m_Layer: 5
-  m_Name: MenuELife
+  m_Name: MenuVideo
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7252,6 +7254,55 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1229694646}
   m_CullTransparentMesh: 1
+--- !u!1 &1234055648
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1234055650}
+  - component: {fileID: 1234055649}
+  m_Layer: 0
+  m_Name: EnemySpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1234055649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1234055648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97245478c1dc36f47a519cd3647ee14e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dementorPrefab: {fileID: 7090532858897402169, guid: 778faa16a7c52fd4e8ed32ea54688844, type: 3}
+  playerTransform: {fileID: 192189817}
+  minDistanceToPlayer: 3
+  maxDistanceX: 10
+  minY: 0.05
+  maxY: 5
+--- !u!4 &1234055650
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1234055648}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -4.1094923, y: 10.333788, z: -1269.1312}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 15
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1258731621 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6008047434372315160, guid: 2b724e2952af0e846a694bbed2dc014f, type: 3}
@@ -7344,7 +7395,7 @@ GameObject:
   - component: {fileID: 1291738205}
   - component: {fileID: 1291738204}
   m_Layer: 5
-  m_Name: TextK
+  m_Name: ScoreInGame
   m_TagString: Score
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8483,7 +8534,7 @@ CanvasRenderer:
   m_CullTransparentMesh: 1
 --- !u!95 &1529687617
 Animator:
-  serializedVersion: 3
+  serializedVersion: 5
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -8496,10 +8547,12 @@ Animator:
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorControllerStateOnDisable: 0
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1532653270
 GameObject:
   m_ObjectHideFlags: 0
@@ -8750,6 +8803,71 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2b724e2952af0e846a694bbed2dc014f, type: 3}
+--- !u!1 &1550535418
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1550535420}
+  - component: {fileID: 1550535419}
+  m_Layer: 0
+  m_Name: UIManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1550535419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1550535418}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a29b202e0a9383e48987279dd586105b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  menuInicio: {fileID: 1217386102}
+  menuGameOver: {fileID: 539422200}
+  menuPause: {fileID: 1900618838}
+  menuUI: {fileID: 663584327}
+  menuOptions: {fileID: 388679007}
+  SCORE: {fileID: 1291738202}
+  enjuego: {fileID: 619610040}
+  enmenus: {fileID: 821270144}
+  buttonsUI: {fileID: 905907879}
+  bJump: {fileID: 82705930}
+  bSpell: {fileID: 352276157}
+  counterescoba: {fileID: 1153856597}
+  contadorescoba: {fileID: 1153856599}
+  MenuVideo: {fileID: 1011790346}
+  player: {fileID: 421426198}
+  scoreInGameText: {fileID: 1291738204}
+  scoreDeathText: {fileID: 1584457112}
+  highScoreText: {fileID: 1664056549}
+  hearts:
+  - {fileID: 576602978}
+  - {fileID: 1660628494}
+  - {fileID: 1000812716}
+--- !u!4 &1550535420
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1550535418}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -7.7489305, y: -3.714972, z: -1886.3217}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 16
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1566439989
 GameObject:
   m_ObjectHideFlags: 0
@@ -11003,7 +11121,7 @@ RectTransform:
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!95 &2025832634
 Animator:
-  serializedVersion: 3
+  serializedVersion: 5
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -11016,10 +11134,12 @@ Animator:
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorControllerStateOnDisable: 0
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!114 &2025832635
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11731,33 +11851,18 @@ MonoBehaviour:
   patronumR: {fileID: 1335539750459184588, guid: 6f28098fce9ebf94cb8a57f0fd90e37d, type: 3}
   patronumU: {fileID: 7540787988157735280, guid: 7f680f125ecbcc441bf18f0211c9ab15, type: 3}
   dementor: {fileID: 7090532858897402169, guid: 778faa16a7c52fd4e8ed32ea54688844, type: 3}
-  menuInicio: {fileID: 1217386102}
-  menuGameOver: {fileID: 539422200}
   menuOptions: {fileID: 388679007}
-  menuPause: {fileID: 1900618838}
-  menuUI: {fileID: 663584327}
-  SCORE: {fileID: 1291738202}
-  BY: {fileID: 1589568462}
-  enjuego: {fileID: 619610040}
-  enmenus: {fileID: 821270144}
   powerupvida: {fileID: 9000058582765263723, guid: 9266f79120d34fa458bc4925485777f7, type: 3}
   powerupescoba: {fileID: 8921999445107379309, guid: 93aacca0c2ce8004aa2c33b325e6648a, type: 3}
   poweruppatronus: {fileID: 7526671183217951721, guid: fd172d18d34c8fa41bc71ac37325baad, type: 3}
   powerupbuckbeak: {fileID: 9087135149732185624, guid: cd2916d62d019304b96a2cd84fbd8c76, type: 3}
-  counterescoba: {fileID: 1153856597}
   harrypatronus: {fileID: 2046331925}
   patronusgrande: {fileID: 6177380430119845985, guid: cf4d0ed51ec6bfd4ab3cec5beea174d3, type: 3}
-  buttonsUI: {fileID: 905907879}
   bJump: {fileID: 82705930}
   bSpell: {fileID: 352276157}
-  MenuVideo: {fileID: 1011790346}
-  player: {fileID: 421426198}
   contadorescoba: {fileID: 1153856599}
   scoremuerte: {fileID: 0}
   Hscore: {fileID: 0}
-  vida1: {fileID: 576602978}
-  vida2: {fileID: 1660628494}
-  vida3: {fileID: 1000812716}
   audioPatronus: {fileID: 8684005525262622508, guid: cf4d0ed51ec6bfd4ab3cec5beea174d3, type: 3}
   audiovidamenos: {fileID: 122208014}
   audioEscoba: {fileID: 558607191}
@@ -11780,13 +11885,15 @@ MonoBehaviour:
   buttonSpell: 0
   ActDemen: 0
   ActPowerUp: 0
+  delay: 2000
   highscore: 0
   highS: 0
   vector: {x: 0, y: 0, z: 0}
-  score: 0
+  spawner: {fileID: 1234055649}
   vidas: 1
   contador: 20
   contadorbuckbeak: 15
+  contadorpatronus: 10
   transparenteHarry: 1
 --- !u!4 &2139166816
 Transform:
