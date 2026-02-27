@@ -2515,9 +2515,19 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 2515018191983416354, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
   m_PrefabInstance: {fileID: 2515018192165110101}
   m_PrefabAsset: {fileID: 0}
+--- !u!95 &421426200 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 2515018191983416360, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
+  m_PrefabInstance: {fileID: 2515018192165110101}
+  m_PrefabAsset: {fileID: 0}
 --- !u!50 &421426202 stripped
 Rigidbody2D:
   m_CorrespondingSourceObject: {fileID: 2515018191983416361, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
+  m_PrefabInstance: {fileID: 2515018192165110101}
+  m_PrefabAsset: {fileID: 0}
+--- !u!212 &421426204 stripped
+SpriteRenderer:
+  m_CorrespondingSourceObject: {fileID: 2515018191983416365, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
   m_PrefabInstance: {fileID: 2515018192165110101}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &436018860
@@ -11178,11 +11188,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2025832632}
   m_CullTransparentMesh: 1
---- !u!1 &2046331925 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5439053422235147903, guid: f7f4ecfc6b92186419cbc32be18a67e6, type: 3}
-  m_PrefabInstance: {fileID: 2125141621}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2065852152
 GameObject:
   m_ObjectHideFlags: 0
@@ -11856,19 +11861,19 @@ MonoBehaviour:
   powerupescoba: {fileID: 8921999445107379309, guid: 93aacca0c2ce8004aa2c33b325e6648a, type: 3}
   poweruppatronus: {fileID: 7526671183217951721, guid: fd172d18d34c8fa41bc71ac37325baad, type: 3}
   powerupbuckbeak: {fileID: 9087135149732185624, guid: cd2916d62d019304b96a2cd84fbd8c76, type: 3}
-  harrypatronus: {fileID: 2046331925}
+  harrypatronus: {fileID: 5439053422235147903, guid: f7f4ecfc6b92186419cbc32be18a67e6, type: 3}
   patronusgrande: {fileID: 6177380430119845985, guid: cf4d0ed51ec6bfd4ab3cec5beea174d3, type: 3}
-  bJump: {fileID: 82705930}
-  bSpell: {fileID: 352276157}
+  bJump: {fileID: 0}
+  bSpell: {fileID: 0}
   contadorescoba: {fileID: 1153856599}
   scoremuerte: {fileID: 0}
   Hscore: {fileID: 0}
   audioPatronus: {fileID: 8684005525262622508, guid: cf4d0ed51ec6bfd4ab3cec5beea174d3, type: 3}
   audiovidamenos: {fileID: 122208014}
   audioEscoba: {fileID: 558607191}
-  animHarry: {fileID: 0}
-  rbHarry: {fileID: 0}
-  RendHarry: {fileID: 0}
+  animHarry: {fileID: 421426200}
+  rbHarry: {fileID: 421426202}
+  RendHarry: {fileID: 421426204}
   JS: {fileID: 519420030}
   audiohit: {fileID: 628376443}
   start: 0

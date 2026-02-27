@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -35,7 +34,8 @@ public class Harry : MonoBehaviour
     // Update is called once per frame
     public void Update()
     {
-        if (gameManager.start)
+        // Sustituido el booleano eliminado 'start' por la comprobación del estado del GameManager.
+        if (gameManager != null && gameManager.CurrentState == GameState.Playing)
         {
             if (Input.GetKeyDown(KeyCode.Space) && transform.position.y < 0 && powerupescoba == false && powerupbuckbeak == false)
             {
@@ -67,7 +67,7 @@ public class Harry : MonoBehaviour
                 anim.SetBool("runRight", false);
             }
 
-            if (Input.GetKeyDown(KeyCode.Z) || gameManager.buttonSpell == true)
+            if (Input.GetKeyDown(KeyCode.Z) || (gameManager != null && gameManager.buttonSpell == true))
             {
                 anim.SetBool("disparoR", true);
             }
@@ -87,7 +87,7 @@ public class Harry : MonoBehaviour
                 anim.SetBool("runLeft", false);
             }
 
-            if ((Input.GetKeyDown(KeyCode.Z) || gameManager.buttonSpell == true))
+            if ((Input.GetKeyDown(KeyCode.Z) || (gameManager != null && gameManager.buttonSpell == true)))
             {
                 anim.SetBool("disparoL", true);
             }
@@ -98,14 +98,19 @@ public class Harry : MonoBehaviour
 
             if (numvidas <= 0)
             {
-                numvidas = gameManager.vidas;
-                if (gameManager.cancelvideo == true)
+                // usamos valores del GameManager (asegurando que no sea null)
+                if (gameManager != null)
                 {
-                    gameManager.gameOver = true;
-                    numvidas = 1;
-                    gameManager.contador = 30;
-                    gameManager.powerupescobabool = false;
-                    powerupescoba = false;
+                    numvidas = gameManager.vidas;
+                    if (gameManager.cancelvideo == true)
+                    {
+                        // Reemplaza el booleano eliminado 'gameOver' forzando el estado GameOver
+                        gameManager.CurrentState = GameState.GameOver;
+                        numvidas = 1;
+                        gameManager.contador = 30;
+                        gameManager.powerupescobabool = false;
+                        powerupescoba = false;
+                    }
                 }
             }
 
@@ -121,11 +126,11 @@ public class Harry : MonoBehaviour
                 
             }
 
-            if (gameManager.powerupescobabool == false && gameManager.powerupbuckbeakbool == false)
+            if (gameManager != null && gameManager.powerupescobabool == false && gameManager.powerupbuckbeakbool == false)
             {
                 powerupescoba = false;
                 powerupbuckbeak = false;
-                gameManager.audioEscoba.SetActive(false);
+                if (gameManager.audioEscoba != null) gameManager.audioEscoba.SetActive(false);
             }
 
             if (powerupbuckbeak == true)
@@ -157,40 +162,49 @@ public class Harry : MonoBehaviour
         if (collision.gameObject.CompareTag("Dementor") && powerupbuckbeak == false)
         {
             numvidas--;
-            gameManager.vidas--;
-            gameManager.audiovidamenos.SetActive(true);
+            if (gameManager != null)
+            {
+                gameManager.vidas--;
+                if (gameManager.audiovidamenos != null) gameManager.audiovidamenos.SetActive(true);
+            }
         }
 
         else
         {
-            gameManager.audiovidamenos.SetActive(false);
+            if (gameManager != null && gameManager.audiovidamenos != null) gameManager.audiovidamenos.SetActive(false);
         }
 
         if (collision.gameObject.CompareTag("Vidas") && numvidas < 3)
         {
             numvidas++;
-            gameManager.vidas++;
+            if (gameManager != null) gameManager.vidas++;
         }
 
         if(collision.gameObject.CompareTag("Escoba"))
         {
-            gameManager.powerupescobabool = true;
-            powerupescoba = true;
-            gameManager.Escoba();
-            gameManager.audioEscoba.SetActive(true);
+            if (gameManager != null)
+            {
+                gameManager.powerupescobabool = true;
+                powerupescoba = true;
+                gameManager.Escoba();
+                if (gameManager.audioEscoba != null) gameManager.audioEscoba.SetActive(true);
+            }
         }
 
         if (collision.gameObject.CompareTag("Patronus"))
         {
-            gameManager.Patronus();
+            if (gameManager != null) gameManager.Patronus();
         }
 
         if (collision.gameObject.CompareTag("Buckbeak"))
         {
-            gameManager.powerupbuckbeakbool = true;
-            powerupbuckbeak = true;
-            gameManager.audioEscoba.SetActive(true);
-            gameManager.Buckbeak();
+            if (gameManager != null)
+            {
+                gameManager.powerupbuckbeakbool = true;
+                powerupbuckbeak = true;
+                if (gameManager.audioEscoba != null) gameManager.audioEscoba.SetActive(true);
+                gameManager.Buckbeak();
+            }
         }
     }
 }

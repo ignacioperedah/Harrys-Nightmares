@@ -61,7 +61,7 @@ public class Dementor : MonoBehaviour
             Destroy(gameObject);
         }
         
-        if (reset.reset == true || reset.gameOver == true || reset.vidas <= 0)
+        if (reset.reset == true || reset.CurrentState == GameState.GameOver || reset.vidas <= 0)
         {
             Destroy(gameObject);
         }
