@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemySpawner : MonoBehaviour // Se encargara de generar enemigos en el juego, se le asignara un prefab de enemigo y se encargara de instanciarlo cada cierto tiempo

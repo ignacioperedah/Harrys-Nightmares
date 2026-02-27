@@ -12,8 +12,8 @@ GameObject:
   - component: {fileID: 7698171938931735964}
   - component: {fileID: 5324355160699355464}
   - component: {fileID: 6494469324884664500}
-  - component: {fileID: 928697100904306721}
   - component: {fileID: 5017007230270848573}
+  - component: {fileID: 599060297932136323}
   m_Layer: 9
   m_Name: Expecto patronumU
   m_TagString: Hechizo
@@ -123,22 +123,6 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.04
---- !u!114 &928697100904306721
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7540787988157735280}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ffed1dc8559b45542806aa4d616516d5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Up: 500
-  patronumU: {fileID: 7540787988157735280}
-  harry: {fileID: 2515018191983416364, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
-  hitdemen: 0
 --- !u!82 &5017007230270848573
 AudioSource:
   m_ObjectHideFlags: 0
@@ -235,3 +219,18 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &599060297932136323
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7540787988157735280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e230965669cde334488ac288e40bc15e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  speed: 10
+  lifeTime: 5
+  useForce: 0

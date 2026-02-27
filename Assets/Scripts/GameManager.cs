@@ -11,6 +11,8 @@ public enum GameState
 }
 public class GameManager : MonoBehaviour
 {
+    public static GameManager Instance { get; private set; }
+
     public Transform harry;
     public GameObject patronumL;
     public GameObject patronumR;
@@ -44,10 +46,27 @@ public class GameManager : MonoBehaviour
     public bool cancelvideo = false;
     public bool repeatvideo = false;
     public bool superpatronus = false;
+    // --- Sólo se muestran las secciones modificadas relevantes para instanciar proyectiles y sincronizar facing ---
+    // Añadidos: SetFacing(...) y cambios en Hechizo() + Update() instanciación de hechizos
+    // Inserte estas funciones/modificaciones en el GameManager existente.
     bool goLeft = true;
     bool goRight = false;
-    bool Up = false;
-    bool salto = false;
+
+    /// <summary>
+    /// Establece la orientación del jugador (true = izquierda).
+    /// PlayerController llamará a esto para mantener la única fuente de verdad.
+    /// </summary>
+    public void SetFacing(bool left)
+    {
+        goLeft = left;
+        goRight = !left;
+        if (animHarry != null) animHarry.SetBool("goLeft", left);
+    }
+
+    public bool IsFacingLeft() => goLeft;
+
+    public bool Up = false;
+    public bool salto = false;
     public bool buttonJump = false;
     public bool buttonSpell = false;
     public byte ActDemen = 0;
@@ -117,6 +136,25 @@ public class GameManager : MonoBehaviour
     }
     // Indica que la pausa actual es por mostrar el MenuVideo (no por menú pausa normal)
     private bool _pausedForVideo = false;
+
+    void Awake()
+    {
+        // Singleton sencillo para acceder desde PlayerController u otros
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
     void OnEnterState(GameState state)
     {
         switch (state)
@@ -169,6 +207,10 @@ public class GameManager : MonoBehaviour
                 }
                 if (UIManager.Instance != null) UIManager.Instance.ShowGameOver(score, highS);
                 if (spawner != null) spawner.StopSpawning();
+
+                // NUEVO: eliminar powerups que estén cayendo cuando entramos a GameOver
+                DestroyActivePowerups();
+
                 _pausedForVideo = false;
                 break;
         }
@@ -284,19 +326,32 @@ public class GameManager : MonoBehaviour
     public void Hechizo()
     {
         buttonSpell = true;
+
+        // Helper local para instanciar y configurar Projectile si existe
+        System.Action<GameObject, Vector3, Vector2> SpawnSpell = (prefab, pos, dir) =>
+        {
+            if (prefab == null) return;
+            GameObject inst = Instantiate(prefab, pos, Quaternion.identity);
+            var proj = inst.GetComponent<Projectile>();
+            if (proj != null) proj.Init(dir);
+        };
+
+        Vector3 basePos = harry != null ? harry.position : Vector3.zero;
+
         if (powerupescobabool == false && powerupbuckbeakbool == false)
         {
-            if (buttonSpell && goLeft && !Up) Instantiate(patronumL, harry.position + new Vector3(-0.6f, -0.1f, 0), Quaternion.identity);
-            if (buttonSpell && goRight && !Up) Instantiate(patronumR, harry.position + new Vector3(0.6f, -0.1f, 0), Quaternion.identity);
-            if (buttonSpell && goRight && Up && !salto) Instantiate(patronumU, harry.position + new Vector3(0.2f, 0.7f, 0), Quaternion.identity);
-            if (buttonSpell && goLeft && Up && !salto) Instantiate(patronumU, harry.position + new Vector3(-0.2f, 0.7f, 0), Quaternion.identity);
+            if (buttonSpell && goLeft && !Up) SpawnSpell(patronumL, basePos + new Vector3(-0.6f, -0.1f, 0), Vector2.left);
+            if (buttonSpell && goRight && !Up) SpawnSpell(patronumR, basePos + new Vector3(0.6f, -0.1f, 0), Vector2.right);
+            if (buttonSpell && goRight && Up && !salto) SpawnSpell(patronumU, basePos + new Vector3(0.2f, 0.7f, 0), Vector2.up);
+            if (buttonSpell && goLeft && Up && !salto) SpawnSpell(patronumU, basePos + new Vector3(-0.2f, 0.7f, 0), Vector2.up);
         }
-        if (powerupescobabool)
+        else
         {
-            if (buttonSpell && goLeft) Instantiate(patronumL, harry.position + new Vector3(-1.6f, 0.1f, 0), Quaternion.identity);
-            if (buttonSpell && goRight) Instantiate(patronumR, harry.position + new Vector3(1.6f, 0.1f, 0), Quaternion.identity);
+            if (buttonSpell && goLeft) SpawnSpell(patronumL, basePos + new Vector3(-1.6f, 0.1f, 0), Vector2.left);
+            if (buttonSpell && goRight) SpawnSpell(patronumR, basePos + new Vector3(1.6f, 0.1f, 0), Vector2.right);
         }
     }
+
     public void hechizoNot()
     {
         buttonSpell = false;
@@ -339,6 +394,30 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+
+    /// <summary>
+    /// Elimina powerups activos que estén cayendo (solo cuando entramos en GameOver según especificación).
+    /// </summary>
+    private void DestroyActivePowerups()
+    {
+        // Tags usados en el juego para powerups/coleccionables
+        string[] tags = new[] { "Vidas", "Escoba", "Patronus", "Buckbeak" };
+
+        foreach (var t in tags)
+        {
+            var objs = GameObject.FindGameObjectsWithTag(t);
+            if (objs == null || objs.Length == 0) continue;
+            foreach (var go in objs)
+            {
+                Destroy(go);
+            }
+        }
+
+        // También aseguramos ocultar contador y audio asociado
+        if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(false);
+        if (audioEscoba != null) audioEscoba.SetActive(false);
+    }
+
     // Spawn aleatorio de powerup (vida, escoba, patronus, buckbeak)
     private void SpawnPowerup()
     {
@@ -467,16 +546,42 @@ public class GameManager : MonoBehaviour
                 // Hechizo con teclado
                 if (!powerupescobabool)
                 {
-                    if (Input.GetKeyDown(KeyCode.Z) && goLeft && !Up) Instantiate(patronumL, harry.position + new Vector3(-0.6f, -0.1f, 0), Quaternion.identity);
-                    if (Input.GetKeyDown(KeyCode.Z) && goRight && !Up) Instantiate(patronumR, harry.position + new Vector3(0.6f, -0.1f, 0), Quaternion.identity);
-                    if (Input.GetKeyDown(KeyCode.Z) && goRight && Up && !salto) Instantiate(patronumU, harry.position + new Vector3(0.2f, 0.7f, 0), Quaternion.identity);
-                    if (Input.GetKeyDown(KeyCode.Z) && goLeft && Up && !salto) Instantiate(patronumU, harry.position + new Vector3(-0.2f, 0.7f, 0), Quaternion.identity);
+                    if (Input.GetKeyDown(KeyCode.Z) && goLeft && !Up) {
+                        var inst = Instantiate(patronumL, harry.position + new Vector3(-0.6f, -0.1f, 0), Quaternion.identity);
+                        var proj = inst.GetComponent<Projectile>();
+                        if (proj != null) proj.Init(Vector2.left);
+                    }
+                    if (Input.GetKeyDown(KeyCode.Z) && goRight && !Up) {
+                        var inst = Instantiate(patronumR, harry.position + new Vector3(0.6f, -0.1f, 0), Quaternion.identity);
+                        var proj = inst.GetComponent<Projectile>();
+                        if (proj != null) proj.Init(Vector2.right);
+                    }
+                    if (Input.GetKeyDown(KeyCode.Z) && goRight && Up && !salto) {
+                        var inst = Instantiate(patronumU, harry.position + new Vector3(0.2f, 0.7f, 0), Quaternion.identity);
+                        var proj = inst.GetComponent<Projectile>();
+                        if (proj != null) proj.Init(Vector2.up);
+                    }
+                    if (Input.GetKeyDown(KeyCode.Z) && goLeft && Up && !salto) {
+                        var inst = Instantiate(patronumU, harry.position + new Vector3(-0.2f, 0.7f, 0), Quaternion.identity);
+                        var proj = inst.GetComponent<Projectile>();
+                        if (proj != null) proj.Init(Vector2.up);
+                    }
                 }
                 else
                 {
-                    if (Input.GetKeyDown(KeyCode.Z) && goLeft) Instantiate(patronumL, harry.position + new Vector3(-1.6f, 0.1f, 0), Quaternion.identity);
-                    if (Input.GetKeyDown(KeyCode.Z) && goRight) Instantiate(patronumR, harry.position + new Vector3(1.6f, 0.1f, 0), Quaternion.identity);
+                    if (Input.GetKeyDown(KeyCode.Z) && goLeft) {
+                        var inst = Instantiate(patronumL, harry.position + new Vector3(-1.6f, 0.1f, 0), Quaternion.identity);
+                        var proj = inst.GetComponent<Projectile>();
+                        if (proj != null) proj.Init(Vector2.left);
+                    }
+                    if (Input.GetKeyDown(KeyCode.Z) && goRight) {
+                        var inst = Instantiate(patronumR, harry.position + new Vector3(1.6f, 0.1f, 0), Quaternion.identity);
+                        var proj = inst.GetComponent<Projectile>();
+                        if (proj != null) proj.Init(Vector2.right);
+                    }
                 }
+                // ----------------------------------------------------------------
+
                 // Actualizar vidas en UI
                 if (UIManager.Instance != null) UIManager.Instance.UpdateLives(vidas);
                 if (vidas > 3) vidas = 3;

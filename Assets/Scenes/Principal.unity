@@ -1484,6 +1484,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 228494342}
   m_CullTransparentMesh: 1
+--- !u!1 &234727796 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5439053422235147903, guid: f7f4ecfc6b92186419cbc32be18a67e6, type: 3}
+  m_PrefabInstance: {fileID: 2125141621}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &246840887
 GameObject:
   m_ObjectHideFlags: 0
@@ -11732,6 +11737,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5439053422235147900, guid: f7f4ecfc6b92186419cbc32be18a67e6, type: 3}
+      propertyPath: m_SortingOrder
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 5439053422235147901, guid: f7f4ecfc6b92186419cbc32be18a67e6, type: 3}
       propertyPath: m_RootOrder
       value: 13
@@ -11779,6 +11788,10 @@ PrefabInstance:
     - target: {fileID: 5439053422235147903, guid: f7f4ecfc6b92186419cbc32be18a67e6, type: 3}
       propertyPath: m_Name
       value: HarryPatronus
+      objectReference: {fileID: 0}
+    - target: {fileID: 5439053422235147903, guid: f7f4ecfc6b92186419cbc32be18a67e6, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 5439053422235147903, guid: f7f4ecfc6b92186419cbc32be18a67e6, type: 3}
       propertyPath: m_IsActive
@@ -11861,7 +11874,7 @@ MonoBehaviour:
   powerupescoba: {fileID: 8921999445107379309, guid: 93aacca0c2ce8004aa2c33b325e6648a, type: 3}
   poweruppatronus: {fileID: 7526671183217951721, guid: fd172d18d34c8fa41bc71ac37325baad, type: 3}
   powerupbuckbeak: {fileID: 9087135149732185624, guid: cd2916d62d019304b96a2cd84fbd8c76, type: 3}
-  harrypatronus: {fileID: 5439053422235147903, guid: f7f4ecfc6b92186419cbc32be18a67e6, type: 3}
+  harrypatronus: {fileID: 234727796}
   patronusgrande: {fileID: 6177380430119845985, guid: cf4d0ed51ec6bfd4ab3cec5beea174d3, type: 3}
   bJump: {fileID: 0}
   bSpell: {fileID: 0}
@@ -11876,16 +11889,15 @@ MonoBehaviour:
   RendHarry: {fileID: 421426204}
   JS: {fileID: 519420030}
   audiohit: {fileID: 628376443}
-  start: 0
-  gameOver: 0
   exit: 0
   reset: 0
-  enpausa: 0
   powerupescobabool: 0
   powerupbuckbeakbool: 0
   cancelvideo: 0
   repeatvideo: 0
   superpatronus: 0
+  Up: 0
+  salto: 0
   buttonJump: 0
   buttonSpell: 0
   ActDemen: 0
@@ -11978,8 +11990,24 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 519420030}
     - target: {fileID: 2515018191983416367, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
+      propertyPath: fuerzaSalto
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 2515018191983416367, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
       propertyPath: gameManager
       value: 
       objectReference: {fileID: 2139166815}
+    - target: {fileID: 2515018191983416367, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
+      propertyPath: velocidadSuelo
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2515018191983416367, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
+      propertyPath: escobaMoveMultiplier
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2515018191983416367, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
+      propertyPath: buckbeakMoveMultiplier
+      value: 3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
