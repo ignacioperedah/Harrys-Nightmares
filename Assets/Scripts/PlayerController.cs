@@ -5,6 +5,7 @@ using UnityEngine;
 /// - Fuente de verdad para vidas y powerups: GameManager.Instance.
 /// - Entrada en Update, física en FixedUpdate.
 /// - Animaciones basadas en la dirección real (facing) y sincronizadas con GameManager.
+/// - Maneja la entrada de salto (UI/JS) directamente. Sin teclado.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D), typeof(Animator))]
 public class PlayerController : MonoBehaviour
@@ -25,7 +26,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Vector2 escalaBuckbeak = new Vector2(2.25f, 2.25f);
 
     // Referencias
-    [SerializeField] private Controller JS; // opcional: input desde joystick
+    [SerializeField] private Controller JS; // obligatorio para control en mobile
     private Animator anim;
     private Rigidbody2D rb;
     private Transform tr;
@@ -42,6 +43,13 @@ public class PlayerController : MonoBehaviour
     // Trackers para detectar transiciones de powerups
     private bool _wasPowerupEscoba;
     private bool _wasPowerupBuckbeak;
+
+    // Tracker para detectar borde de pulsación del botón de disparo UI
+    private bool _previousSpellButton = false;
+
+    // UI Jump tracking: la UI llamará Salto()/saltoNot()
+    private bool _uiJumpPressed = false;
+    private bool _previousUIJump = false;
 
     // Propiedades que leen/escriben en GameManager (fuente de verdad)
     private bool PowerupEscoba
@@ -85,9 +93,9 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // Entrada horizontal: teclado o controlador. Usamos GetAxisRaw para respuesta inmediata.
-        float axis = Input.GetAxisRaw("Horizontal");
-        if (JS != null) axis = Mathf.Abs(JS.JSmove.Horizontal) > Mathf.Abs(axis) ? JS.JSmove.Horizontal : axis;
+        // Entrada horizontal: solo joystick/Controller. No teclado.
+        float axis = 0f;
+        if (JS != null) axis = JS.JSmove.Horizontal;
         horizontalInput = axis;
 
         // Actualizar facing sólo cuando hay entrada horizontal no nula.
@@ -102,18 +110,28 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        // Salto: marcar para procesar en FixedUpdate (física)
-        if ((Input.GetKeyDown(KeyCode.Space) || (GameManager.Instance != null && GameManager.Instance.buttonJump))
-            && tr.position.y < 0 && !PowerupEscoba && !PowerupBuckbeak)
+        // Up (apuntar arriba) -> lo determina joystick vertical (sin teclado)
+        bool up = false;
+        if (JS != null && JS.JSmove.Vertical > 0.95f && tr.position.y < 0f) up = true;
+        if (GameManager.Instance != null) GameManager.Instance.Up = up;
+
+        // Salto: UI (detectamos borde para evitar saltos repetidos por hold)
+        bool uiJumpEdge = _uiJumpPressed && !_previousUIJump;
+        if (uiJumpEdge && tr.position.y < 0 && !PowerupEscoba && !PowerupBuckbeak)
         {
             jumpRequested = true;
         }
+        _previousUIJump = _uiJumpPressed;
 
-        // Hechizo/animación de disparo se controla por GameManager.buttonSpell o tecla Z
-        bool spellPressed = Input.GetKeyDown(KeyCode.Z) || (GameManager.Instance != null && GameManager.Instance.buttonSpell);
+        // Hechizo/animación de disparo -> edge detect sobre PlayerCombat.ButtonSpell
+        bool uiSpell = PlayerCombat.Instance != null && PlayerCombat.Instance.ButtonSpell;
+        bool spellPressed = (uiSpell && !_previousSpellButton);
 
         // Actualizamos animaciones cada frame (valores simples)
         UpdateAnimations(spellPressed);
+
+        // actualizar tracker del botón para detectar borde en siguiente frame
+        _previousSpellButton = uiSpell;
 
         // ---- Detectar transiciones de powerups y restaurar escala/gravidad si terminan ----
         bool escobaActive = PowerupEscoba;
@@ -146,7 +164,6 @@ public class PlayerController : MonoBehaviour
         // actualizar trackers
         _wasPowerupEscoba = escobaActive;
         _wasPowerupBuckbeak = buckActive;
-        // -------------------------------------------------------------------------------
 
         // detectar cambios de estado para resetear si es necesario
         DetectAndHandleStateChange();
@@ -227,7 +244,7 @@ public class PlayerController : MonoBehaviour
         anim.SetBool("runLeft", movingLeft && !PowerupEscoba && !PowerupBuckbeak);
         anim.SetBool("goLeft", facingLeft);
 
-        // disparo: usar facing (última dirección conocida) para evitar desajustes
+        // disparo: activamos solo cuando se produce el evento de pulsación (edge)
         if (spellPressed)
         {
             anim.SetBool("disparoL", facingLeft);
@@ -279,6 +296,17 @@ public class PlayerController : MonoBehaviour
         // Reset trackers
         _wasPowerupEscoba = false;
         _wasPowerupBuckbeak = false;
+    }
+
+    // Métodos públicos para que la UI asigne eventos PointerDown/PointerUp
+    public void Salto()
+    {
+        _uiJumpPressed = true;
+    }
+
+    public void saltoNot()
+    {
+        _uiJumpPressed = false;
     }
 
     void OnCollisionEnter2D(Collision2D collision)

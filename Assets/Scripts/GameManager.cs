@@ -14,15 +14,10 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     public Transform harry;
-    public GameObject patronumL;
-    public GameObject patronumR;
-    public GameObject patronumU;
     public GameObject dementor;
     public GameObject menuOptions;
-    public GameObject powerupvida;
-    public GameObject powerupescoba;
-    public GameObject poweruppatronus;
-    public GameObject powerupbuckbeak;
+    // moved power-up prefabs to PowerUpSpawner
+    [SerializeField] private PowerUpSpawner powerUpSpawner;
     public GameObject harrypatronus;
     public GameObject patronusgrande;
     public GameObject bJump;
@@ -38,7 +33,6 @@ public class GameManager : MonoBehaviour
     public SpriteRenderer RendHarry;
     public Controller JS;
     public GameObject audiohit;
-    // Removed: start, gameOver, enpausa booleans
     public bool exit = false;
     public bool reset = false;
     public bool powerupescobabool = false;
@@ -46,15 +40,13 @@ public class GameManager : MonoBehaviour
     public bool cancelvideo = false;
     public bool repeatvideo = false;
     public bool superpatronus = false;
-    // --- Sólo se muestran las secciones modificadas relevantes para instanciar proyectiles y sincronizar facing ---
-    // Añadidos: SetFacing(...) y cambios en Hechizo() + Update() instanciación de hechizos
-    // Inserte estas funciones/modificaciones en el GameManager existente.
+
     bool goLeft = true;
     bool goRight = false;
 
     /// <summary>
-    /// Establece la orientación del jugador (true = izquierda).
-    /// PlayerController llamará a esto para mantener la única fuente de verdad.
+    /// Establece la orientaciï¿½n del jugador (true = izquierda).
+    /// PlayerController llamarï¿½ a esto para mantener la ï¿½nica fuente de verdad.
     /// </summary>
     public void SetFacing(bool left)
     {
@@ -67,16 +59,19 @@ public class GameManager : MonoBehaviour
 
     public bool Up = false;
     public bool salto = false;
-    public bool buttonJump = false;
-    public bool buttonSpell = false;
+
     public byte ActDemen = 0;
-    public int ActPowerUp = 0;
+    // ya no usamos ActPowerUp como lock; se gestiona con _lastPowerupSpawnScore
     [SerializeField] int delay = 2000;
     public int highscore;
     public int highS;
     public Vector3 vector;
     [SerializeField] private EnemySpawner spawner;
     private int _score = 0;
+
+    // Evita spawn duplicado por el mismo valor de score mï¿½ltiplo de 10
+    private int _lastPowerupSpawnScore = -1;
+
     public int score
     {
         get => _score;
@@ -87,19 +82,21 @@ public class GameManager : MonoBehaviour
             UpdateDifficulty();
             if (spawner != null) spawner.UpdateSpawnRate(delay);
             if (UIManager.Instance != null) UIManager.Instance.UpdateScore(_score);
-            // Spawn de powerup cuando score es múltiplo de 10 (y no 0).
+
+            // Spawn de powerup cuando score es mï¿½ltiplo de 10 (y no 0).
             if (_score != 0 && _score % 10 == 0)
             {
-                if (ActPowerUp == 0)
+                // Solo spawnear una vez para ese valor de score
+                if (_lastPowerupSpawnScore != _score)
                 {
-                    ActPowerUp = 1;
-                    SpawnPowerup();
+                    _lastPowerupSpawnScore = _score;
+                    powerUpSpawner?.SpawnPowerup();
                 }
             }
             else
             {
-                // Permitimos spawn en el siguiente múltiplo de 10
-                ActPowerUp = 0;
+                // reset para futuros mï¿½ltiplos
+                _lastPowerupSpawnScore = -1;
             }
         }
     }
@@ -134,7 +131,7 @@ public class GameManager : MonoBehaviour
             OnEnterState(_currentState);
         }
     }
-    // Indica que la pausa actual es por mostrar el MenuVideo (no por menú pausa normal)
+    // Indica que la pausa actual es por mostrar el MenuVideo (no por menï¿½ pausa normal)
     private bool _pausedForVideo = false;
 
     void Awake()
@@ -177,7 +174,7 @@ public class GameManager : MonoBehaviour
                 Time.timeScale = 0f;
                 if (_pausedForVideo)
                 {
-                    // Pausa provocada por menú de vídeo: mostrar sólo el MenuVideo
+                    // Pausa provocada por menï¿½ de vï¿½deo: mostrar sï¿½lo el MenuVideo
                     if (UIManager.Instance != null) UIManager.Instance.SetPlayerActive(false);
                     if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(true);
                     if (UIManager.Instance != null) UIManager.Instance.SetMenuUIActive(false);
@@ -185,7 +182,7 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {
-                    // Pausa normal: menú de pausa tradicional
+                    // Pausa normal: menï¿½ de pausa tradicional
                     if (UIManager.Instance != null) UIManager.Instance.SetPauseUI(true);
                     if (spawner != null) spawner.StopSpawning();
                 }
@@ -194,8 +191,6 @@ public class GameManager : MonoBehaviour
                 // limpiar estado de juego, mostrar GameOver y detener spawner
                 Time.timeScale = 1f;
                 PatronusExit();
-                buttonJump = false;
-                buttonSpell = false;
                 Up = false;
                 if (animHarry != null) animHarry.SetBool("up", false);
                 if (audioPatronus != null) audioPatronus.volume = 0;
@@ -208,7 +203,7 @@ public class GameManager : MonoBehaviour
                 if (UIManager.Instance != null) UIManager.Instance.ShowGameOver(score, highS);
                 if (spawner != null) spawner.StopSpawning();
 
-                // NUEVO: eliminar powerups que estén cayendo cuando entramos a GameOver
+                // Eliminar powerups que estï¿½n cayendo cuando entramos a GameOver
                 DestroyActivePowerups();
 
                 _pausedForVideo = false;
@@ -226,7 +221,7 @@ public class GameManager : MonoBehaviour
         // Estado inicial
         CurrentState = GameState.Menu;
     }
-    // API: cambiar estados mediante métodos
+    // API: cambiar estados mediante mï¿½todos
     public void StartGame()
     {
         CurrentState = GameState.Playing;
@@ -237,7 +232,7 @@ public class GameManager : MonoBehaviour
     }
     public void Restart()
     {
-        // Reinicio inmediato: ocultar menú de vídeo y pasar a Playing
+        // Reinicio inmediato: ocultar menï¿½ de vï¿½deo y pasar a Playing
         if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(false);
         // Restaurar variables de reinicio
         score = 0;
@@ -270,7 +265,7 @@ public class GameManager : MonoBehaviour
     }
     public void Pause()
     {
-        // pausa normal (menú pausa)
+        // pausa normal (menï¿½ pausa)
         _pausedForVideo = false;
         CurrentState = GameState.Paused;
     }
@@ -310,52 +305,12 @@ public class GameManager : MonoBehaviour
         superpatronus = false;
         contadorpatronus = 10.0f;
     }
-    public void Salto()
-    {
-        // evitar saltar si estamos en el aire: comprobación directa de Y
-        buttonJump = true;
-        if (harry != null && harry.position.y < 0 && powerupescobabool == false)
-        {
-            if (rbHarry != null) rbHarry.AddForce(new Vector2(0, 400));
-        }
-    }
+
     public void saltoNot()
     {
-        buttonJump = false;
-    }
-    public void Hechizo()
-    {
-        buttonSpell = true;
-
-        // Helper local para instanciar y configurar Projectile si existe
-        System.Action<GameObject, Vector3, Vector2> SpawnSpell = (prefab, pos, dir) =>
-        {
-            if (prefab == null) return;
-            GameObject inst = Instantiate(prefab, pos, Quaternion.identity);
-            var proj = inst.GetComponent<Projectile>();
-            if (proj != null) proj.Init(dir);
-        };
-
-        Vector3 basePos = harry != null ? harry.position : Vector3.zero;
-
-        if (powerupescobabool == false && powerupbuckbeakbool == false)
-        {
-            if (buttonSpell && goLeft && !Up) SpawnSpell(patronumL, basePos + new Vector3(-0.6f, -0.1f, 0), Vector2.left);
-            if (buttonSpell && goRight && !Up) SpawnSpell(patronumR, basePos + new Vector3(0.6f, -0.1f, 0), Vector2.right);
-            if (buttonSpell && goRight && Up && !salto) SpawnSpell(patronumU, basePos + new Vector3(0.2f, 0.7f, 0), Vector2.up);
-            if (buttonSpell && goLeft && Up && !salto) SpawnSpell(patronumU, basePos + new Vector3(-0.2f, 0.7f, 0), Vector2.up);
-        }
-        else
-        {
-            if (buttonSpell && goLeft) SpawnSpell(patronumL, basePos + new Vector3(-1.6f, 0.1f, 0), Vector2.left);
-            if (buttonSpell && goRight) SpawnSpell(patronumR, basePos + new Vector3(1.6f, 0.1f, 0), Vector2.right);
-        }
+        // Ya gestionado por PlayerController
     }
 
-    public void hechizoNot()
-    {
-        buttonSpell = false;
-    }
     public void CancelVideo()
     {
         cancelvideo = true;
@@ -367,13 +322,13 @@ public class GameManager : MonoBehaviour
     }
     public void VideoReward()
     {
-        // Volver desde menuVideo: asegurar orientación a la izquierda antes de jugar
+        // Volver desde menuVideo: asegurar orientaciï¿½n a la izquierda antes de jugar
         if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(false);
         if (UIManager.Instance != null) UIManager.Instance.SetPlayerActive(true);
         if (UIManager.Instance != null) UIManager.Instance.SetMenuUIActive(true);
         repeatvideo = true;
         vidas = 1;
-        // forzar orientación inicial: disparo hacia la izquierda
+        // forzar orientaciï¿½n inicial: disparo hacia la izquierda
         goLeft = true;
         goRight = false;
         if (animHarry != null) animHarry.SetBool("goLeft", true);
@@ -396,7 +351,7 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Elimina powerups activos que estén cayendo (solo cuando entramos en GameOver según especificación).
+    /// Elimina powerups activos que estï¿½n cayendo (solo cuando entramos en GameOver segï¿½n especificaciï¿½n).
     /// </summary>
     private void DestroyActivePowerups()
     {
@@ -413,100 +368,22 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // También aseguramos ocultar contador y audio asociado
+        // Tambiï¿½n aseguramos ocultar contador y audio asociado
         if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(false);
         if (audioEscoba != null) audioEscoba.SetActive(false);
     }
 
-    // Spawn aleatorio de powerup (vida, escoba, patronus, buckbeak)
-    private void SpawnPowerup()
-    {
-        // 0=vida, 1=escoba, 2=patronus, 3=buckbeak
-        var candidates = new System.Collections.Generic.List<int>();
-        // Vida siempre permitida (aunque jugador tenga ya 3 vidas).
-        candidates.Add(0);
-        // Si cualquiera de los powerups de "movimiento" está activo,
-        // no permitimos generar ni Escoba ni Buckbeak.
-        bool movementPowerupActive = powerupescobabool || powerupbuckbeakbool;
-        if (!movementPowerupActive)
-        {
-            candidates.Add(1); // escoba
-            candidates.Add(3); // buckbeak
-        }
-        // Si no hay Patronus activo, permitir Patronus
-        if (!superpatronus)
-        {
-            candidates.Add(2); // patronus
-        }
-        // Seguridad: aseguramos al menos una opción
-        if (candidates.Count == 0)
-        {
-            candidates.Add(0);
-        }
-        int choice = candidates[Random.Range(0, candidates.Count)];
-        float x = Random.Range(-9f, 9f);
-        Vector3 pos = new Vector3(x, 6.5f, 0);
-        switch (choice)
-        {
-            case 0: // vida
-                if (powerupvida != null) Instantiate(powerupvida, pos, Quaternion.identity);
-                break;
-            case 1: // escoba
-                if (powerupescoba != null) Instantiate(powerupescoba, pos, Quaternion.identity);
-                break;
-            case 2: // patronus
-                if (poweruppatronus != null) Instantiate(poweruppatronus, pos, Quaternion.identity);
-                break;
-            case 3: // buckbeak
-                if (powerupbuckbeak != null) Instantiate(powerupbuckbeak, pos, Quaternion.identity);
-                break;
-        }
-    }
     // Update is called once per frame
     public void Update()
     {
-        // entradas globales
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            // salir rápido desde ciertos estados
-            if (CurrentState == GameState.Menu) Home();
-        }
+        // Quitado soporte de teclado. Todo el control se hace por UI/JS.
         switch (CurrentState)
         {
             case GameState.Menu:
-                if (Input.GetKeyDown(KeyCode.Return))
-                {
-                    StartGame();
-                }
+                // la transiciï¿½n a Playing la debe manejar la UI -> StartGame()
                 break;
             case GameState.Playing:
-                // movimiento / dirección / entrada
-                if (Input.GetKey(KeyCode.LeftArrow) || (JS != null && JS.JSmove.Horizontal < 0))
-                {
-                    goLeft = true;
-                    goRight = false;
-                }
-                if (Input.GetKey(KeyCode.RightArrow) || (JS != null && JS.JSmove.Horizontal > 0))
-                {
-                    goRight = true;
-                    goLeft = false;
-                }
-                if ((Input.GetKey(KeyCode.UpArrow) || (JS != null && JS.JSmove.Vertical > 0.95f)) && harry.position.y < 0)
-                {
-                    Up = true;
-                    if (animHarry != null) animHarry.SetBool("up", true);
-                }
-                if (Input.GetKeyUp(KeyCode.UpArrow) || (JS != null && JS.JSmove.Vertical < 0.95f) || harry.position.y > 0)
-                {
-                    Up = false;
-                    if (animHarry != null) animHarry.SetBool("up", false);
-                }
-                // Pausar
-                if (Input.GetKeyDown(KeyCode.Escape))
-                {
-                    Pause();
-                }
-                // Powerups / counters UI
+                // Actualizar UI y contadores (no inputs de teclado)
                 if (powerupescobabool)
                 {
                     if (UIManager.Instance != null) UIManager.Instance.UpdateCounterText($"{contador}");
@@ -541,51 +418,13 @@ public class GameManager : MonoBehaviour
                 }
                 if (score % 10 != 0)
                 {
-                    ActPowerUp = 0;
+                    // mantenemos _lastPowerupSpawnScore logic en setter; nada que hacer aquï¿½
                 }
-                // Hechizo con teclado
-                if (!powerupescobabool)
-                {
-                    if (Input.GetKeyDown(KeyCode.Z) && goLeft && !Up) {
-                        var inst = Instantiate(patronumL, harry.position + new Vector3(-0.6f, -0.1f, 0), Quaternion.identity);
-                        var proj = inst.GetComponent<Projectile>();
-                        if (proj != null) proj.Init(Vector2.left);
-                    }
-                    if (Input.GetKeyDown(KeyCode.Z) && goRight && !Up) {
-                        var inst = Instantiate(patronumR, harry.position + new Vector3(0.6f, -0.1f, 0), Quaternion.identity);
-                        var proj = inst.GetComponent<Projectile>();
-                        if (proj != null) proj.Init(Vector2.right);
-                    }
-                    if (Input.GetKeyDown(KeyCode.Z) && goRight && Up && !salto) {
-                        var inst = Instantiate(patronumU, harry.position + new Vector3(0.2f, 0.7f, 0), Quaternion.identity);
-                        var proj = inst.GetComponent<Projectile>();
-                        if (proj != null) proj.Init(Vector2.up);
-                    }
-                    if (Input.GetKeyDown(KeyCode.Z) && goLeft && Up && !salto) {
-                        var inst = Instantiate(patronumU, harry.position + new Vector3(-0.2f, 0.7f, 0), Quaternion.identity);
-                        var proj = inst.GetComponent<Projectile>();
-                        if (proj != null) proj.Init(Vector2.up);
-                    }
-                }
-                else
-                {
-                    if (Input.GetKeyDown(KeyCode.Z) && goLeft) {
-                        var inst = Instantiate(patronumL, harry.position + new Vector3(-1.6f, 0.1f, 0), Quaternion.identity);
-                        var proj = inst.GetComponent<Projectile>();
-                        if (proj != null) proj.Init(Vector2.left);
-                    }
-                    if (Input.GetKeyDown(KeyCode.Z) && goRight) {
-                        var inst = Instantiate(patronumR, harry.position + new Vector3(1.6f, 0.1f, 0), Quaternion.identity);
-                        var proj = inst.GetComponent<Projectile>();
-                        if (proj != null) proj.Init(Vector2.right);
-                    }
-                }
-                // ----------------------------------------------------------------
 
                 // Actualizar vidas en UI
                 if (UIManager.Instance != null) UIManager.Instance.UpdateLives(vidas);
                 if (vidas > 3) vidas = 3;
-                // Si se quedan sin vidas: mostrar menú de vídeo (pausa) o ir a GameOver según bandera
+                // Si se quedan sin vidas: mostrar menï¿½ de vï¿½deo (pausa) o ir a GameOver segï¿½n bandera
                 if (vidas <= 0 && !repeatvideo)
                 {
                     if (cancelvideo)
@@ -594,8 +433,6 @@ public class GameManager : MonoBehaviour
                     }
                     else
                     {
-                        // marcar que la pausa será por menuVideo y cambiar estado,
-                        // OnEnterState manejará la visibilidad correcta de menús
                         _pausedForVideo = true;
                         CurrentState = GameState.Paused;
                     }
@@ -606,27 +443,10 @@ public class GameManager : MonoBehaviour
                 }
                 break;
             case GameState.Paused:
-                // entradas cuando estamos en pausa (incluye menú pausa y menú de vídeo)
-                if (Input.GetKeyDown(KeyCode.Return))
-                {
-                    // reanudar si se acepta la recompensa o se sale del menú pausa
-                    Resume();
-                }
-                if (Input.GetKeyDown(KeyCode.Escape))
-                {
-                    Home();
-                }
+                // control por UI
                 break;
             case GameState.GameOver:
-                // en GameOver escuchamos sólo reinicio o vuelta a Home
-                if (Input.GetKeyDown(KeyCode.Return))
-                {
-                    Restart();
-                }
-                if (Input.GetKeyDown(KeyCode.Escape))
-                {
-                    Home();
-                }
+                // control por UI
                 break;
         }
     }

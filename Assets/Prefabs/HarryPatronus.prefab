@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5439053422235147901}
   - component: {fileID: 5439053422235147900}
   - component: {fileID: 4368949492894236303}
-  m_Layer: 7
+  m_Layer: 8
   m_Name: HarryPatronus
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -71,7 +71,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 7
   m_Sprite: {fileID: -2360155267004816386, guid: 8889732a59bf86e45aee181e0c2e487f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0

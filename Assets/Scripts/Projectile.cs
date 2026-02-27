@@ -1,10 +1,9 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// Componente genérico para proyectiles (reemplaza HechizoL/HechizoR/HechizoU).
-/// - Inicializar con Init(direction) o configurar la dirección en inspector.
-/// - Se encarga de mover, detectar colisiones con Dementor y autodestruirse.
-/// - Evita lógica repetida (IgnoreCollision) y heavy operations en Update.
+/// Componente genérico para proyectiles (actualizado para pooling):
+/// - No destruye el objeto; en su lugar lo desactiva para ser reutilizado por PlayerCombat.
+/// - Mantiene Init(direction) para lanzar.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
 public class Projectile : MonoBehaviour
@@ -26,12 +25,8 @@ public class Projectile : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        // Aseguramos que el proyectil no empuje a los enemigos por física:
-        // Preferimos manejar la destrucción en OnCollisionEnter2D.
         if (rb != null)
         {
-            // modo cinemático evita que fuerzas empujen otros rigidbodies,
-            // pero mantiene colisiones para triggers / contactos y permite velocity control.
             rb.isKinematic = false;
             rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         }
@@ -40,7 +35,6 @@ public class Projectile : MonoBehaviour
     void OnEnable()
     {
         spawnTime = Time.time;
-        // Ignorar colisiones con objetos del jugador/pared/vidas: hacemos esto una vez al enable
         IgnoreTagsCollision("Pared");
         IgnoreTagsCollision("Harry");
         IgnoreTagsCollision("Vidas");
@@ -54,25 +48,23 @@ public class Projectile : MonoBehaviour
         }
         else
         {
-            // si no se inicializó explícitamente, usar la dirección por defecto (derecha)
             Launch();
         }
     }
 
     void Update()
     {
-        // Vida limitada
+        // Vida limitada -> en lugar de Destroy, desactivamos para pooling
         if (Time.time - spawnTime >= lifeTime)
         {
-            Destroy(gameObject);
+            DeactivateSelf();
             return;
         }
 
-        // límites de pantalla (seguridad similar a original). Ajustar si hace falta.
         Vector3 pos = transform.position;
         if (Mathf.Abs(pos.x) > 12f || Mathf.Abs(pos.y) > 12f)
         {
-            Destroy(gameObject);
+            DeactivateSelf();
         }
     }
 
@@ -85,8 +77,10 @@ public class Projectile : MonoBehaviour
         if (dir.sqrMagnitude <= 0.0001f) return;
         direction = dir.normalized;
         initialized = true;
-        // Si Start ya pasó, lanzar ahora:
-        if (rb != null && enabled) Launch();
+        if (rb != null && enabled)
+        {
+            Launch();
+        }
     }
 
     private void Launch()
@@ -98,7 +92,6 @@ public class Projectile : MonoBehaviour
         }
         else
         {
-            // Usamos velocity directo para un movimiento determinista y evitar empujes fuertes
             rb.velocity = direction * speed;
         }
     }
@@ -121,11 +114,8 @@ public class Projectile : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        // cuando choca con Dementor, destruir proyectil y el dementor sin depender de la física
         if (collision.gameObject.CompareTag("Dementor"))
         {
-            // Evitar empujar: aplicar la destrucción directa del enemigo y del proyectil.
-            // Además actualizamos score y reproducimos audio si existe en GameManager.
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.score++;
@@ -135,17 +125,20 @@ public class Projectile : MonoBehaviour
                 }
             }
 
-            // Destruir el enemigo de forma inmediata
+            // destruir el dementor, pero desactivar el proyectil para reutilización
             Destroy(collision.gameObject);
-
-            // Destruir el proyectil
-            Destroy(gameObject);
+            DeactivateSelf();
             return;
         }
 
-        // Si choca con otros colliders (muros, suelo...), destruimos el proyectil para evitar rebotes
-        // pero sin aplicar fuerzas que puedan empujar objetos dinámicos.
-        // Permitimos pasar por tags ignoradas ya en OnEnable.
-        Destroy(gameObject);
+        // colisión con otros colliders -> desactivar para pooling
+        DeactivateSelf();
+    }
+
+    private void DeactivateSelf()
+    {
+        if (rb != null) rb.velocity = Vector2.zero;
+        initialized = false;
+        gameObject.SetActive(false);
     }
 }
