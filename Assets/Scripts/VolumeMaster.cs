@@ -10,49 +10,64 @@ public class VolumeMaster : MonoBehaviour
     public Image imagenMuteoptions;
     public Image imagenMutepause;
 
-
-    // Start is called before the first frame update
     void Start()
     {
-        slideroptions.value = PlayerPrefs.GetFloat("volumenAudio", 0.5f);
-        AudioListener.volume = slideroptions.value;
-        sliderpause.value = slideroptions.value;
+        // Now delegate storage and AudioListener.volume to AudioManager
+        if (AudioManager.Instance != null)
+        {
+            float val = AudioManager.Instance.GetVolume();
+            slideroptions.value = val;
+            sliderpause.value = val;
+        }
+        else
+        {
+            // Fallback
+            float stored = PlayerPrefs.GetFloat("volumenAudio", 0.5f);
+            slideroptions.value = stored;
+            sliderpause.value = stored;
+            AudioListener.volume = stored;
+        }
 
         RevisarSiestoyMute();
     }
 
     public void ChangeSlider1()
-    { 
-        PlayerPrefs.SetFloat("volumenAudio", slideroptions.value);
-        AudioListener.volume = slideroptions.value;
-        sliderpause.value = slideroptions.value;
+    {
+        float v = slideroptions.value;
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.SetVolume(v);
+        }
+        else
+        {
+            PlayerPrefs.SetFloat("volumenAudio", v);
+            AudioListener.volume = v;
+        }
+        sliderpause.value = v;
         RevisarSiestoyMute();
     }
 
     public void ChangeSlider2()
     {
-        PlayerPrefs.SetFloat("volumenAudio", sliderpause.value);
-        AudioListener.volume = sliderpause.value;
-        slideroptions.value = sliderpause.value;
+        float v = sliderpause.value;
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.SetVolume(v);
+        }
+        else
+        {
+            PlayerPrefs.SetFloat("volumenAudio", v);
+            AudioListener.volume = v;
+        }
+        slideroptions.value = v;
         RevisarSiestoyMute();
     }
 
     public void RevisarSiestoyMute()
     {
-        if (slideroptions.value == 0)
-        {
-            imagenMuteoptions.enabled = true;
-            imagenMutepause.enabled = true;
-        }
-        else
-        {
-            imagenMuteoptions.enabled = false;
-            imagenMutepause.enabled = false;
-        }
-    }
-    // Update is called once per frame
-    void Update()
-    {
-
+        float val = slideroptions != null ? slideroptions.value : 0f;
+        bool isMute = Mathf.Approximately(val, 0f);
+        if (imagenMuteoptions != null) imagenMuteoptions.enabled = isMute;
+        if (imagenMutepause != null) imagenMutepause.enabled = isMute;
     }
 }

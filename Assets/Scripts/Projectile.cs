@@ -119,9 +119,9 @@ public class Projectile : MonoBehaviour
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.score++;
-                if (GameManager.Instance.audiohit != null)
+                if (AudioManager.Instance != null)
                 {
-                    GameManager.Instance.audiohit.SetActive(true);
+                    AudioManager.Instance.PlaySFX("Hit");
                 }
             }
 

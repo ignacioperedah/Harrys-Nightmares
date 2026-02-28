@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Collections;
+/// <summary>
+/// GameManager centralizado. La lógica de audio se ha movido a AudioManager.
+/// </summary>
 public enum GameState
 {
     Menu,
@@ -25,14 +28,13 @@ public class GameManager : MonoBehaviour
     public Text contadorescoba;
     public Text scoremuerte;
     public Text Hscore;
-    public AudioSource audioPatronus;
-    public GameObject audiovidamenos;
-    public GameObject audioEscoba;
+    // audio moved to AudioManager
     public Animator animHarry;
     public Rigidbody2D rbHarry;
     public SpriteRenderer RendHarry;
     public Controller JS;
-    public GameObject audiohit;
+    // removed audiohit, audioEscoba, audioPatronus references from GameManager
+
     public bool exit = false;
     public bool reset = false;
     public bool powerupescobabool = false;
@@ -40,6 +42,9 @@ public class GameManager : MonoBehaviour
     public bool cancelvideo = false;
     public bool repeatvideo = false;
     public bool superpatronus = false;
+
+    [Header("Difficulty")]
+    [SerializeField] private DifficultyConfig difficultyConfig; // ScriptableObject con escalones
 
     bool goLeft = true;
     bool goRight = false;
@@ -105,20 +110,7 @@ public class GameManager : MonoBehaviour
     public float contadorbuckbeak = 15.0f;
     public float contadorpatronus = 10.0f;
     public float transparenteHarry = 1;
-    // Tabla de dificultad: umbral -> valor de delay (ms)
-    private readonly (int threshold, int delay)[] difficultySteps = new (int, int)[]
-    {
-        (100, 113),
-        (90, 150),
-        (80, 200),
-        (70, 267),
-        (60, 356),
-        (50, 475),
-        (40, 633),
-        (30, 844),
-        (20, 1125),
-        (10, 1500)
-    };
+
     // FSM state
     private GameState _currentState = GameState.Menu;
     public GameState CurrentState
@@ -193,7 +185,8 @@ public class GameManager : MonoBehaviour
                 PatronusExit();
                 Up = false;
                 if (animHarry != null) animHarry.SetBool("up", false);
-                if (audioPatronus != null) audioPatronus.volume = 0;
+                // Stop Patronus music if playing
+                if (AudioManager.Instance != null) AudioManager.Instance.StopMusic("Patronus");
                 repeatvideo = false;
                 if (score > highS)
                 {
@@ -294,21 +287,13 @@ public class GameManager : MonoBehaviour
     {
         if (harrypatronus != null) harrypatronus.SetActive(true);
         StartCoroutine(PatronusTimer());
-        if (audioEscoba != null) audioEscoba.SetActive(true);
-        if (audioPatronus != null) audioPatronus.volume = 0.75f;
         superpatronus = true;
     }
     public void PatronusExit()
     {
         if (harrypatronus != null) harrypatronus.SetActive(false);
-        if (audioEscoba != null) audioEscoba.SetActive(false);
         superpatronus = false;
         contadorpatronus = 10.0f;
-    }
-
-    public void saltoNot()
-    {
-        // Ya gestionado por PlayerController
     }
 
     public void CancelVideo()
@@ -337,15 +322,45 @@ public class GameManager : MonoBehaviour
         _pausedForVideo = false;
         CurrentState = GameState.Playing;
     }
+
     //Velocidad de aparicion dementores
     void UpdateDifficulty()
     {
-        foreach (var step in difficultySteps)
+        // Si hay DifficultyConfig asignado, usar sus escalones; si no, usar fallback interno
+        if (difficultyConfig != null && difficultyConfig.steps != null && difficultyConfig.steps.Length > 0)
         {
-            if (score > step.threshold)
+            foreach (var step in difficultyConfig.steps)
             {
-                delay = step.delay;
-                break;
+                if (score > step.threshold)
+                {
+                    delay = step.delay;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            // Fallback a la tabla embebida previamente usada (mantener compatibilidad)
+            var fallback = new (int threshold, int delay)[]
+            {
+                (100, 113),
+                (90, 150),
+                (80, 200),
+                (70, 267),
+                (60, 356),
+                (50, 475),
+                (40, 633),
+                (30, 844),
+                (20, 1125),
+                (10, 1500)
+            };
+            foreach (var step in fallback)
+            {
+                if (score > step.threshold)
+                {
+                    delay = step.delay;
+                    break;
+                }
             }
         }
     }
@@ -368,9 +383,9 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Tambi�n aseguramos ocultar contador y audio asociado
+        // Aseguramos ocultar contador y audio asociado (ahora controlado por AudioManager)
         if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(false);
-        if (audioEscoba != null) audioEscoba.SetActive(false);
+        if (AudioManager.Instance != null) AudioManager.Instance.StopMusic("Escoba");
     }
 
     // Update is called once per frame
@@ -465,6 +480,8 @@ public class GameManager : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
             contador--;
         }
+        // When timer finished, ensure Escoba audio is stopped
+        if (AudioManager.Instance != null) AudioManager.Instance.StopMusic("Escoba");
     }
     IEnumerator BuckbeakTimer()
     {
@@ -481,6 +498,7 @@ public class GameManager : MonoBehaviour
             yield return new WaitForSeconds(0.5f);
             contadorbuckbeak--;
         }
+        if (AudioManager.Instance != null) AudioManager.Instance.StopMusic("Escoba");
     }
     IEnumerator PatronusTimer()
     {

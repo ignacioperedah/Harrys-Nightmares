@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d6e5950603c8e745a821ac545e78132, type: 3}
+  m_Name: DifficultyConfig
+  m_EditorClassIdentifier: 
+  steps:
+  - threshold: 100
+    delay: 113
+  - threshold: 90
+    delay: 150
+  - threshold: 80
+    delay: 200
+  - threshold: 70
+    delay: 267
+  - threshold: 60
+    delay: 356
+  - threshold: 50
+    delay: 475
+  - threshold: 40
+    delay: 633
+  - threshold: 30
+    delay: 844
+  - threshold: 20
+    delay: 1125
+  - threshold: 10
+    delay: 1500

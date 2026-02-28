@@ -10,15 +10,9 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D), typeof(Animator))]
 public class PlayerController : MonoBehaviour
 {
-    // Fuerzas / velocidades (configurables)
-    [Header("Movimiento")]
-    [SerializeField] private float fuerzaSalto = 400f;
-    [SerializeField] private float velocidadSuelo = 10f;
-    [SerializeField] private float multiplicadorAire = 0.5f;
-
-    [Header("Powerups - movimiento")]
-    [SerializeField] private float escobaMoveMultiplier = 0.1f;
-    [SerializeField] private float buckbeakMoveMultiplier = 0.15f;
+    // Configuración a través de ScriptableObject (fallbacks si no está asignado)
+    [Header("Configuración (PlayerStats)")]
+    [SerializeField] private PlayerStats stats;
 
     [Header("Escalas")]
     [SerializeField] private Vector2 escalaNormal = new Vector2(5f, 5f);
@@ -69,6 +63,13 @@ public class PlayerController : MonoBehaviour
         get => GameManager.Instance != null ? GameManager.Instance.vidas : 0;
         set { if (GameManager.Instance != null) GameManager.Instance.vidas = value; }
     }
+
+    // Accesos seguros a stats con fallback a valores previos para no romper escenas existentes
+    private float FuerzaSalto => stats != null ? stats.fuerzaSalto : 400f;
+    private float VelocidadSuelo => stats != null ? stats.velocidadSuelo : 10f;
+    private float MultiplicadorAire => stats != null ? stats.multiplicadorAire : 0.5f;
+    private float EscobaMoveMultiplier => stats != null ? stats.escobaMoveMultiplier : 0.1f;
+    private float BuckbeakMoveMultiplier => stats != null ? stats.buckbeakMoveMultiplier : 0.15f;
 
     void Start()
     {
@@ -143,10 +144,6 @@ public class PlayerController : MonoBehaviour
             tr.localScale = escalaNormal;
             rb.gravityScale = 1f;
             if (anim != null) anim.SetBool("escoba", false);
-            if (GameManager.Instance != null && GameManager.Instance.audioEscoba != null)
-            {
-                GameManager.Instance.audioEscoba.SetActive(false);
-            }
         }
 
         if (!buckActive && _wasPowerupBuckbeak)
@@ -155,10 +152,6 @@ public class PlayerController : MonoBehaviour
             tr.localScale = escalaNormal;
             rb.gravityScale = 1f;
             if (anim != null) anim.SetBool("buckbeak", false);
-            if (GameManager.Instance != null && GameManager.Instance.audioEscoba != null)
-            {
-                GameManager.Instance.audioEscoba.SetActive(false);
-            }
         }
 
         // actualizar trackers
@@ -179,14 +172,15 @@ public class PlayerController : MonoBehaviour
             jumpRequested = false;
             if (tr.position.y < 0 && !PowerupEscoba && !PowerupBuckbeak)
             {
-                rb.AddForce(Vector2.up * fuerzaSalto);
+                rb.AddForce(Vector2.up * FuerzaSalto);
+                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Jump");
             }
         }
 
         // Movimiento horizontal: en suelo y en aire con multiplicador
         if (!PowerupEscoba && !PowerupBuckbeak)
         {
-            float speed = velocidadSuelo * (tr.position.y > 0.01f ? multiplicadorAire : 1f);
+            float speed = VelocidadSuelo * (tr.position.y > 0.01f ? MultiplicadorAire : 1f);
             Vector2 targetVelocity = new Vector2(horizontalInput * speed, rb.velocity.y);
             rb.velocity = targetVelocity;
         }
@@ -202,14 +196,14 @@ public class PlayerController : MonoBehaviour
             {
                 tr.localScale = escalaEscoba;
                 rb.gravityScale = 0f;
-                Vector3 delta = new Vector3(xInput * escobaMoveMultiplier * Time.fixedDeltaTime, yInput * escobaMoveMultiplier * Time.fixedDeltaTime, 0f);
+                Vector3 delta = new Vector3(xInput * EscobaMoveMultiplier * Time.fixedDeltaTime, yInput * EscobaMoveMultiplier * Time.fixedDeltaTime, 0f);
                 rb.MovePosition(tr.position + delta);
             }
             else if (PowerupBuckbeak)
             {
                 tr.localScale = escalaBuckbeak;
                 rb.gravityScale = 0f;
-                Vector3 delta = new Vector3(xInput * buckbeakMoveMultiplier * Time.fixedDeltaTime, yInput * buckbeakMoveMultiplier * Time.fixedDeltaTime, 0f);
+                Vector3 delta = new Vector3(xInput * BuckbeakMoveMultiplier * Time.fixedDeltaTime, yInput * BuckbeakMoveMultiplier * Time.fixedDeltaTime, 0f);
                 rb.MovePosition(tr.position + delta);
             }
         }
@@ -320,7 +314,7 @@ public class PlayerController : MonoBehaviour
                 if (!PowerupBuckbeak)
                 {
                     Vidas = Mathf.Max(0, Vidas - 1);
-                    if (GameManager.Instance.audiovidamenos != null) GameManager.Instance.audiovidamenos.SetActive(true);
+                    if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("VidaMenos");
                 }
                 break;
 
@@ -334,17 +328,18 @@ public class PlayerController : MonoBehaviour
             case "Escoba":
                 PowerupEscoba = true;
                 GameManager.Instance.Escoba();
-                if (GameManager.Instance.audioEscoba != null) GameManager.Instance.audioEscoba.SetActive(true);
+                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Pickup");
                 break;
 
             case "Patronus":
                 GameManager.Instance.Patronus();
+                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Pickup");
                 break;
 
             case "Buckbeak":
                 PowerupBuckbeak = true;
                 GameManager.Instance.Buckbeak();
-                if (GameManager.Instance.audioEscoba != null) GameManager.Instance.audioEscoba.SetActive(true);
+                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Pickup");
                 break;
 
             default:

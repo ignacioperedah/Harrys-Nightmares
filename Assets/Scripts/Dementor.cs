@@ -26,9 +26,9 @@ public class Dementor : MonoBehaviour
         GameObject[] noCollision3 = GameObject.FindGameObjectsWithTag("Vidas");
 
         foreach (GameObject Dementor in noCollision)
-            {
+        {
             Physics2D.IgnoreCollision(Dementor.GetComponent<Collider2D>(), GetComponent<Collider2D>());
-            }
+        }
 
         foreach (GameObject Dementor in noCollision2)
         {
@@ -71,13 +71,11 @@ public class Dementor : MonoBehaviour
 
         if (transform.position.x < -12 || transform.position.x > 12)
         {
-            puntos.score++;
             Destroy(gameObject);
         }
 
         if (transform.position.y < -10 || transform.position.y > 10)
         {
-            puntos.score++;
             Destroy(gameObject);
         }
 
@@ -104,17 +102,8 @@ public class Dementor : MonoBehaviour
     void OnCollisionEnter2D(Collision2D collision)
     {
         GameManager puntos = GameObject.FindGameObjectWithTag("GM").GetComponent<GameManager>();
-        GameManager audio = GameObject.FindGameObjectWithTag("GM").GetComponent<GameManager>();
-        audio.audiohit.SetActive(false);
 
-        if (collision.gameObject.CompareTag("Hechizo"))
-        {
-            puntos.score++;
-            audio.audiohit.SetActive(true);
-            Hit = true;
-        }
-
-        if (collision.gameObject.CompareTag("Harry"))
+        if (collision.gameObject.CompareTag("Hechizo") || collision.gameObject.CompareTag("Harry"))
         {
             Hit = true;
         }
@@ -122,8 +111,7 @@ public class Dementor : MonoBehaviour
         if(collision.gameObject.CompareTag("Harry") && puntos.powerupbuckbeakbool == true)
         {
             puntos.score++;
-            audio.audiohit.SetActive(true);
-            Hit = true;
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Hit");
         }
     }
     void OnCollisionExit2D(Collision2D collision)

@@ -6176,6 +6176,70 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 942181058}
   m_CullTransparentMesh: 1
+--- !u!1 &980085606
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 980085608}
+  - component: {fileID: 980085607}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &980085607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 980085606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ed92930da6e0274187d8a6cc9e13963, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  audioMixer: {fileID: 24100000, guid: 66bc7ca5a75455f489d7ce5d59457e66, type: 2}
+  musicMixerParam: MusicVolume
+  sfxMixerParam: SFXVolume
+  musicSource: {fileID: 0}
+  sfxSource: {fileID: 0}
+  clips:
+  - name: Hit
+    clip: {fileID: 8300000, guid: 58513d756548b1240b24c20d8b993207, type: 3}
+    volume: 1
+  - name: VidaMenos
+    clip: {fileID: 8300000, guid: 07126c914cf93db40a444d63c41dfca7, type: 3}
+    volume: 1
+  - name: VidaMas
+    clip: {fileID: 8300000, guid: 9db4560d97ef16d4a942688d1befe389, type: 3}
+    volume: 1
+  - name: Pickup
+    clip: {fileID: 8300000, guid: 52bd54c2735946741bce6df14f39ed90, type: 3}
+    volume: 0.3
+  - name: Salto
+    clip: {fileID: 8300000, guid: a3874215e268d514d868fa6b44fd65c1, type: 3}
+    volume: 0.3
+--- !u!4 &980085608
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 980085606}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 3.87, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 9
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1000812716
 GameObject:
   m_ObjectHideFlags: 0
@@ -12174,14 +12238,10 @@ MonoBehaviour:
   contadorescoba: {fileID: 1153856599}
   scoremuerte: {fileID: 0}
   Hscore: {fileID: 0}
-  audioPatronus: {fileID: 8684005525262622508, guid: cf4d0ed51ec6bfd4ab3cec5beea174d3, type: 3}
-  audiovidamenos: {fileID: 122208014}
-  audioEscoba: {fileID: 558607191}
   animHarry: {fileID: 421426200}
   rbHarry: {fileID: 421426202}
   RendHarry: {fileID: 421426204}
   JS: {fileID: 519420030}
-  audiohit: {fileID: 628376443}
   exit: 0
   reset: 0
   powerupescobabool: 0
@@ -12189,10 +12249,10 @@ MonoBehaviour:
   cancelvideo: 0
   repeatvideo: 0
   superpatronus: 0
+  difficultyConfig: {fileID: 11400000, guid: 4db3b7806fdab844f900750b9fbcb717, type: 2}
   Up: 0
   salto: 0
   ActDemen: 0
-  ActPowerUp: 0
   delay: 2000
   highscore: 0
   highS: 0
@@ -12280,6 +12340,10 @@ PrefabInstance:
       propertyPath: JS
       value: 
       objectReference: {fileID: 519420030}
+    - target: {fileID: 2515018191983416367, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
+      propertyPath: stats
+      value: 
+      objectReference: {fileID: 11400000, guid: dfdd9c33ed0fa51438f5c091febb2f12, type: 2}
     - target: {fileID: 2515018191983416367, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
       propertyPath: fuerzaSalto
       value: 450
