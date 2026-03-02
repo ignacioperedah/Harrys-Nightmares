@@ -5,7 +5,8 @@ using UnityEngine;
 /// Responsable de decidir y crear power-ups.
 /// - Prefabs serializados en el inspector.
 /// - Método público SpawnPowerup() para invocar desde GameManager.
-/// - Filtra tipos que ya están cayendo en escena por tag para evitar duplicados.
+/// - Mantiene un registro en memoria de powerups instanciados para evitar búsquedas por tag.
+/// - Implementa Singleton y limpieza periódica de referencias nulas.
 /// </summary>
 public class PowerUpSpawner : MonoBehaviour
 {
@@ -21,7 +22,40 @@ public class PowerUpSpawner : MonoBehaviour
     private const string TagPatronus = "Patronus";
     private const string TagBuckbeak = "Buckbeak";
 
-    // Lógica pública para decidir cuándo y qué spawnear
+    // Registro en memoria de powerups activos (instanciados)
+    private readonly List<GameObject> _activePowerups = new List<GameObject>();
+    public IReadOnlyList<GameObject> ActivePowerups => _activePowerups.AsReadOnly();
+
+    // Singleton
+    public static PowerUpSpawner Instance { get; private set; }
+
+    // Limpieza periódica
+    private float cleanTimer;
+    private const float CleanIntervalSeconds = 2f;
+
+    void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else if (Instance != this) Destroy(gameObject);
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
+    void Update()
+    {
+        // Ejecutar limpieza periódica de referencias nulas para no sobrecargar la CPU.
+        cleanTimer -= Time.deltaTime;
+        if (cleanTimer <= 0f)
+        {
+            CleanNullReferences();
+            cleanTimer = CleanIntervalSeconds;
+        }
+    }
+
+    // Lógica pública para decidir qué y cuándo spawnear
     public void SpawnPowerup()
     {
         // Construimos candidatos con filtros para evitar duplicados en escena
@@ -32,10 +66,10 @@ public class PowerUpSpawner : MonoBehaviour
         // Si cualquiera de los powerups de "movimiento" está activo en el juego, no añadir
         bool movementPowerupActive = GameManager.Instance != null && (GameManager.Instance.powerupescobabool || GameManager.Instance.powerupbuckbeakbool);
 
-        // Evitar spawnear Escoba si ya hay una Escoba en escena
-        bool escobaInScene = GameObject.FindGameObjectsWithTag(TagEscoba).Length > 0;
-        bool buckInScene = GameObject.FindGameObjectsWithTag(TagBuckbeak).Length > 0;
-        bool patronusInScene = GameObject.FindGameObjectsWithTag(TagPatronus).Length > 0;
+        // Evitar spawnear Escoba/BuckBeak/Patronus si ya hay una instancia registrada en la lista
+        bool escobaInScene = _activePowerups.Exists(go => go != null && go.CompareTag(TagEscoba));
+        bool buckInScene = _activePowerups.Exists(go => go != null && go.CompareTag(TagBuckbeak));
+        bool patronusInScene = _activePowerups.Exists(go => go != null && go.CompareTag(TagPatronus));
 
         if (!movementPowerupActive && !escobaInScene && !buckInScene)
         {
@@ -60,20 +94,70 @@ public class PowerUpSpawner : MonoBehaviour
         float x = Random.Range(-9f, 9f);
         Vector3 pos = new Vector3(x, 6.5f, 0);
 
+        GameObject spawned = null;
+
         switch (choice)
         {
             case 0:
-                if (powerupVida != null) Instantiate(powerupVida, pos, Quaternion.identity);
+                if (powerupVida != null) spawned = Instantiate(powerupVida, pos, Quaternion.identity);
                 break;
             case 1:
-                if (powerupEscoba != null) Instantiate(powerupEscoba, pos, Quaternion.identity);
+                if (powerupEscoba != null) spawned = Instantiate(powerupEscoba, pos, Quaternion.identity);
                 break;
             case 2:
-                if (powerupPatronus != null) Instantiate(powerupPatronus, pos, Quaternion.identity);
+                if (powerupPatronus != null) spawned = Instantiate(powerupPatronus, pos, Quaternion.identity);
                 break;
             case 3:
-                if (powerupBuckbeak != null) Instantiate(powerupBuckbeak, pos, Quaternion.identity);
+                if (powerupBuckbeak != null) spawned = Instantiate(powerupBuckbeak, pos, Quaternion.identity);
                 break;
         }
+
+        if (spawned != null)
+        {
+            // Registrar para permitir consultas rápidas sin FindByTag
+            _activePowerups.Add(spawned);
+        }
+    }
+
+    /// <summary>
+    /// Permite que powerups se desregistren explícitamente (por ejemplo, si el powerup tiene un script
+    /// que llama a Unregister en OnDestroy/OnDisable).
+    /// </summary>
+    public void Unregister(GameObject go)
+    {
+        if (go == null)
+        {
+            // limpieza de referencias nulas
+            _activePowerups.RemoveAll(item => item == null);
+            return;
+        }
+
+        _activePowerups.Remove(go);
+    }
+
+    /// <summary>
+    /// Elimina y limpia todos los powerups registrados (uso desde GameManager en GameOver).
+    /// </summary>
+    public void DestroyAllActivePowerups()
+    {
+        // Evitar modificar colección mientras iteramos directamente; creamos copia
+        var snapshot = _activePowerups.ToArray();
+        foreach (var go in snapshot)
+        {
+            if (go != null)
+            {
+                Destroy(go);
+            }
+        }
+
+        _activePowerups.Clear();
+    }
+
+    /// <summary>
+    /// Limpieza rápida de referencias nulas en el registro.
+    /// </summary>
+    public void CleanNullReferences()
+    {
+        _activePowerups.RemoveAll(item => item == null);
     }
 }

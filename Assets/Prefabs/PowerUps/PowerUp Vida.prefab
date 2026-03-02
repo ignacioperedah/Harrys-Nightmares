@@ -11,10 +11,10 @@ GameObject:
   - component: {fileID: 9000058582765263716}
   - component: {fileID: 9000058582765263717}
   - component: {fileID: 9000058582765263722}
-  - component: {fileID: -6627606763420174969}
   - component: {fileID: 837442471100466159}
+  - component: {fileID: 5480327551929115304}
   m_Layer: 7
-  m_Name: Vida
+  m_Name: PowerUp Vida
   m_TagString: Vidas
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -106,20 +106,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 5
---- !u!114 &-6627606763420174969
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9000058582765263723}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e9402315694a8e84789316775bcb043e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vidas: {fileID: 9000058582765263723}
-  polygonCollider: {fileID: 837442471100466159}
 --- !u!60 &837442471100466159
 PolygonCollider2D:
   m_ObjectHideFlags: 0
@@ -151,3 +137,15 @@ PolygonCollider2D:
       - {x: 0.28, y: -0.55}
       - {x: 0.28, y: 0.53}
       - {x: 0.26, y: 0.55}
+--- !u!114 &5480327551929115304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9000058582765263723}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d00019224420364d9140ede64fc45b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

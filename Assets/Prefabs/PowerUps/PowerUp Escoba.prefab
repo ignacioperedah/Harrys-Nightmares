@@ -12,9 +12,9 @@ GameObject:
   - component: {fileID: 2609731740962974014}
   - component: {fileID: 7010608372397664436}
   - component: {fileID: 6414084268194399407}
-  - component: {fileID: 852415767178217181}
+  - component: {fileID: 3661160642151588456}
   m_Layer: 7
-  m_Name: Escoba
+  m_Name: PowerUp Escoba
   m_TagString: Escoba
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -132,7 +132,7 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 5
---- !u!114 &852415767178217181
+--- !u!114 &3661160642151588456
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -141,8 +141,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 8921999445107379309}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 338b8dceb47d0fc46b345cb25977a344, type: 3}
+  m_Script: {fileID: 11500000, guid: a5461dfdde82a40488c31be31ceae464, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  escoba: {fileID: 8921999445107379309}
-  polygonCollider: {fileID: 7010608372397664436}

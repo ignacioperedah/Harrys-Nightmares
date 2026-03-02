@@ -24,12 +24,12 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - Piso
+  - Paredes
   - Water
   - UI
   - Player
   - Powerups
-  - Objects
+  - Enemies
   - Hechizo
   - 
   - 

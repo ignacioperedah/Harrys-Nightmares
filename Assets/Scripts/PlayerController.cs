@@ -20,7 +20,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Vector2 escalaBuckbeak = new Vector2(2.25f, 2.25f);
 
     // Referencias
-    [SerializeField] private Controller JS; // obligatorio para control en mobile
+    [SerializeField] private Joystick JSmove; // ahora el Joystick está directamente aquí
     private Animator anim;
     private Rigidbody2D rb;
     private Transform tr;
@@ -37,6 +37,11 @@ public class PlayerController : MonoBehaviour
     // Trackers para detectar transiciones de powerups
     private bool _wasPowerupEscoba;
     private bool _wasPowerupBuckbeak;
+
+    // Trackers de solicitud para aplicar cambios de Rigidbody en FixedUpdate
+    private bool restoreFromEscobaRequested;
+    private bool restoreFromBuckbeakRequested;
+    private bool resetDefaultsRequested;
 
     // Tracker para detectar borde de pulsación del botón de disparo UI
     private bool _previousSpellButton = false;
@@ -94,9 +99,18 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // Entrada horizontal: solo joystick/Controller. No teclado.
+        // Si el jugador está sin vidas: anular input del joystick (antes lo hacía Controller)
+        if (Vidas < 1)
+        {
+            if (JSmove != null) JSmove.input = Vector2.zero;
+            // No tocar el background aquí: UIManager / GameManager gestionan la visibilidad
+            DetectAndHandleStateChange();
+            return;
+        }
+
+        // Entrada horizontal: solo joystick. No teclado.
         float axis = 0f;
-        if (JS != null) axis = JS.JSmove.Horizontal;
+        if (JSmove != null) axis = JSmove.Horizontal;
         horizontalInput = axis;
 
         // Actualizar facing sólo cuando hay entrada horizontal no nula.
@@ -113,13 +127,14 @@ public class PlayerController : MonoBehaviour
 
         // Up (apuntar arriba) -> lo determina joystick vertical (sin teclado)
         bool up = false;
-        if (JS != null && JS.JSmove.Vertical > 0.95f && tr.position.y < 0f) up = true;
+        if (JSmove != null && JSmove.Vertical > 0.95f && tr.position.y < 0f) up = true;
         if (GameManager.Instance != null) GameManager.Instance.Up = up;
 
         // Salto: UI (detectamos borde para evitar saltos repetidos por hold)
         bool uiJumpEdge = _uiJumpPressed && !_previousUIJump;
         if (uiJumpEdge && tr.position.y < 0 && !PowerupEscoba && !PowerupBuckbeak)
         {
+            // Solo marcamos la intención; la física se aplica en FixedUpdate
             jumpRequested = true;
         }
         _previousUIJump = _uiJumpPressed;
@@ -134,24 +149,20 @@ public class PlayerController : MonoBehaviour
         // actualizar tracker del botón para detectar borde en siguiente frame
         _previousSpellButton = uiSpell;
 
-        // ---- Detectar transiciones de powerups y restaurar escala/gravidad si terminan ----
+        // ---- Detectar transiciones de powerups y solicitar restauración (aplicar en FixedUpdate) ----
         bool escobaActive = PowerupEscoba;
         bool buckActive = PowerupBuckbeak;
 
         if (!escobaActive && _wasPowerupEscoba)
         {
-            // La escoba terminó -> restaurar valores relevantes
-            tr.localScale = escalaNormal;
-            rb.gravityScale = 1f;
-            if (anim != null) anim.SetBool("escoba", false);
+            // La escoba terminó -> solicitar restauración de gravedad y escala en FixedUpdate
+            restoreFromEscobaRequested = true;
         }
 
         if (!buckActive && _wasPowerupBuckbeak)
         {
-            // Buckbeak terminó -> restaurar valores relevantes
-            tr.localScale = escalaNormal;
-            rb.gravityScale = 1f;
-            if (anim != null) anim.SetBool("buckbeak", false);
+            // Buckbeak terminó -> solicitar restauración de gravedad y escala en FixedUpdate
+            restoreFromBuckbeakRequested = true;
         }
 
         // actualizar trackers
@@ -166,9 +177,34 @@ public class PlayerController : MonoBehaviour
     {
         if (GameManager.Instance == null || GameManager.Instance.CurrentState != GameState.Playing) return;
 
-        // Saltar (física)
+        // Aplicar solicitudes de restauración solicitadas en Update (modifican Rigidbody/transform físicos)
+        if (restoreFromEscobaRequested)
+        {
+            restoreFromEscobaRequested = false;
+            tr.localScale = escalaNormal;
+            rb.gravityScale = 1f;
+            // animación se mantiene sincronizada por UpdateAnimations
+        }
+
+        if (restoreFromBuckbeakRequested)
+        {
+            restoreFromBuckbeakRequested = false;
+            tr.localScale = escalaNormal;
+            rb.gravityScale = 1f;
+        }
+
+        if (resetDefaultsRequested)
+        {
+            resetDefaultsRequested = false;
+            tr.localScale = escalaNormal;
+            rb.gravityScale = 1f;
+            rb.velocity = Vector2.zero;
+        }
+
+        // Saltar (física) - siempre en FixedUpdate
         if (jumpRequested)
         {
+            // Consumir la petición de salto aquí (la petición se generó en Update)
             jumpRequested = false;
             if (tr.position.y < 0 && !PowerupEscoba && !PowerupBuckbeak)
             {
@@ -190,7 +226,7 @@ public class PlayerController : MonoBehaviour
             rb.velocity = Vector2.zero;
             float xInput = horizontalInput;
             float yInput = 0f;
-            if (JS != null) yInput = JS.JSmove.Vertical;
+            if (JSmove != null) yInput = JSmove.Vertical;
 
             if (PowerupEscoba)
             {
@@ -268,10 +304,12 @@ public class PlayerController : MonoBehaviour
 
     private void ResetPlayerToDefault()
     {
-        // Restaurar valores por defecto
+        // Restaurar valores por defecto (no aplicar Rigidbody directamente aquí)
         tr.localScale = escalaNormal;
-        rb.gravityScale = 1f;
-        rb.velocity = Vector2.zero;
+        // Solicitar al FixedUpdate que haga los cambios físicos seguros
+        resetDefaultsRequested = true;
+
+        // Reset de estado no-físico
         jumpRequested = false;
         horizontalInput = 0f;
 
@@ -307,43 +345,22 @@ public class PlayerController : MonoBehaviour
     {
         if (GameManager.Instance == null) return;
 
-        string tag = collision.gameObject.tag;
-        switch (tag)
+        // Intentar usar la interfaz ICollectible para objetos recolectables
+        var collectible = collision.gameObject.GetComponent<CollectibleBase>();
+        if (collectible != null)
         {
-            case "Dementor":
-                if (!PowerupBuckbeak)
-                {
-                    Vidas = Mathf.Max(0, Vidas - 1);
-                    if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("VidaMenos");
-                }
-                break;
+            collectible.OnCollect();
+            return;
+        }
 
-            case "Vidas":
-                if (Vidas < 3)
-                {
-                    Vidas++;
-                }
-                break;
-
-            case "Escoba":
-                PowerupEscoba = true;
-                GameManager.Instance.Escoba();
-                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Pickup");
-                break;
-
-            case "Patronus":
-                GameManager.Instance.Patronus();
-                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Pickup");
-                break;
-
-            case "Buckbeak":
-                PowerupBuckbeak = true;
-                GameManager.Instance.Buckbeak();
-                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Pickup");
-                break;
-
-            default:
-                break;
+        // Lógica para colisiones que NO son items (ej. enemigos)
+        if (collision.gameObject.CompareTag("Dementor"))
+        {
+            if (!PowerupBuckbeak)
+            {
+                Vidas = Mathf.Max(0, Vidas - 1);
+                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("VidaMenos");
+            }
         }
     }
 }

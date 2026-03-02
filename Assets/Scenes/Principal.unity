@@ -9731,9 +9731,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88bf8733bb98a2a49b3e6af2dce02487, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  patronumL: {fileID: 1605554837687404926, guid: 75f70149706e7934d8acc37e8a1b4cac, type: 3}
-  patronumR: {fileID: 1335539750459184588, guid: 6f28098fce9ebf94cb8a57f0fd90e37d, type: 3}
-  patronumU: {fileID: 7540787988157735280, guid: 7f680f125ecbcc441bf18f0211c9ab15, type: 3}
+  patronum: {fileID: 1605554837687404926, guid: 75f70149706e7934d8acc37e8a1b4cac, type: 3}
   initialPoolSize: 8
 --- !u!4 &1616079715
 Transform:

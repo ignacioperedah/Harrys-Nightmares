@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 7526671183217951719}
   - component: {fileID: 7526671183217951720}
   - component: {fileID: 2237597924605893485}
-  - component: {fileID: 8700007366244957816}
+  - component: {fileID: 4600445061975288453}
   m_Layer: 7
   m_Name: PowerUp Patronus
   m_TagString: Patronus
@@ -135,7 +135,7 @@ PolygonCollider2D:
       - {x: -0.088976085, y: -0.27321047}
       - {x: 0.13575779, y: -0.25761664}
       - {x: 0.12796067, y: 0.29219502}
---- !u!114 &8700007366244957816
+--- !u!114 &4600445061975288453
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -144,8 +144,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 7526671183217951721}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 67fcba899859ad844a3de290fd4be69f, type: 3}
+  m_Script: {fileID: 11500000, guid: 5587feea2de6fc34eb3a4cb48b747c99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  patronus: {fileID: 7526671183217951721}
-  polygonCollider: {fileID: 2237597924605893485}

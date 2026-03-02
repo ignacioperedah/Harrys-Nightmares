@@ -32,7 +32,6 @@ public class GameManager : MonoBehaviour
     public Animator animHarry;
     public Rigidbody2D rbHarry;
     public SpriteRenderer RendHarry;
-    public Controller JS;
     // removed audiohit, audioEscoba, audioPatronus references from GameManager
 
     public bool exit = false;
@@ -50,8 +49,8 @@ public class GameManager : MonoBehaviour
     bool goRight = false;
 
     /// <summary>
-    /// Establece la orientaci�n del jugador (true = izquierda).
-    /// PlayerController llamar� a esto para mantener la �nica fuente de verdad.
+    /// Establece la orientación del jugador (true = izquierda).
+    /// PlayerController llamará a esto para mantener la única fuente de verdad.
     /// </summary>
     public void SetFacing(bool left)
     {
@@ -74,7 +73,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private EnemySpawner spawner;
     private int _score = 0;
 
-    // Evita spawn duplicado por el mismo valor de score m�ltiplo de 10
+    // Evita spawn duplicado por el mismo valor de score múltiplo de 10
     private int _lastPowerupSpawnScore = -1;
 
     public int score
@@ -88,7 +87,7 @@ public class GameManager : MonoBehaviour
             if (spawner != null) spawner.UpdateSpawnRate(delay);
             if (UIManager.Instance != null) UIManager.Instance.UpdateScore(_score);
 
-            // Spawn de powerup cuando score es m�ltiplo de 10 (y no 0).
+            // Spawn de powerup cuando score es múltiplo de 10 (y no 0).
             if (_score != 0 && _score % 10 == 0)
             {
                 // Solo spawnear una vez para ese valor de score
@@ -100,7 +99,7 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                // reset para futuros m�ltiplos
+                // reset para futuros múltiplos
                 _lastPowerupSpawnScore = -1;
             }
         }
@@ -123,7 +122,7 @@ public class GameManager : MonoBehaviour
             OnEnterState(_currentState);
         }
     }
-    // Indica que la pausa actual es por mostrar el MenuVideo (no por men� pausa normal)
+    // Indica que la pausa actual es por mostrar el MenuVideo (no por menú pausa normal)
     private bool _pausedForVideo = false;
 
     void Awake()
@@ -166,7 +165,7 @@ public class GameManager : MonoBehaviour
                 Time.timeScale = 0f;
                 if (_pausedForVideo)
                 {
-                    // Pausa provocada por men� de v�deo: mostrar s�lo el MenuVideo
+                    // Pausa provocada por menú de vídeo: mostrar sólo el MenuVideo
                     if (UIManager.Instance != null) UIManager.Instance.SetPlayerActive(false);
                     if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(true);
                     if (UIManager.Instance != null) UIManager.Instance.SetMenuUIActive(false);
@@ -174,7 +173,7 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {
-                    // Pausa normal: men� de pausa tradicional
+                    // Pausa normal: menú de pausa tradicional
                     if (UIManager.Instance != null) UIManager.Instance.SetPauseUI(true);
                     if (spawner != null) spawner.StopSpawning();
                 }
@@ -196,7 +195,7 @@ public class GameManager : MonoBehaviour
                 if (UIManager.Instance != null) UIManager.Instance.ShowGameOver(score, highS);
                 if (spawner != null) spawner.StopSpawning();
 
-                // Eliminar powerups que est�n cayendo cuando entramos a GameOver
+                // Eliminar powerups que están cayendo cuando entramos a GameOver
                 DestroyActivePowerups();
 
                 _pausedForVideo = false;
@@ -214,7 +213,7 @@ public class GameManager : MonoBehaviour
         // Estado inicial
         CurrentState = GameState.Menu;
     }
-    // API: cambiar estados mediante m�todos
+    // API: cambiar estados mediante métodos
     public void StartGame()
     {
         CurrentState = GameState.Playing;
@@ -225,7 +224,7 @@ public class GameManager : MonoBehaviour
     }
     public void Restart()
     {
-        // Reinicio inmediato: ocultar men� de v�deo y pasar a Playing
+        // Reinicio inmediato: ocultar menú de vídeo y pasar a Playing
         if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(false);
         // Restaurar variables de reinicio
         score = 0;
@@ -258,7 +257,7 @@ public class GameManager : MonoBehaviour
     }
     public void Pause()
     {
-        // pausa normal (men� pausa)
+        // pausa normal (menú pausa)
         _pausedForVideo = false;
         CurrentState = GameState.Paused;
     }
@@ -307,13 +306,13 @@ public class GameManager : MonoBehaviour
     }
     public void VideoReward()
     {
-        // Volver desde menuVideo: asegurar orientaci�n a la izquierda antes de jugar
+        // Volver desde menuVideo: asegurar orientación a la izquierda antes de jugar
         if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(false);
         if (UIManager.Instance != null) UIManager.Instance.SetPlayerActive(true);
         if (UIManager.Instance != null) UIManager.Instance.SetMenuUIActive(true);
         repeatvideo = true;
         vidas = 1;
-        // forzar orientaci�n inicial: disparo hacia la izquierda
+        // forzar orientación inicial: disparo hacia la izquierda
         goLeft = true;
         goRight = false;
         if (animHarry != null) animHarry.SetBool("goLeft", true);
@@ -366,21 +365,20 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Elimina powerups activos que est�n cayendo (solo cuando entramos en GameOver seg�n especificaci�n).
+    /// Elimina powerups activos que están cayendo (solo cuando entramos en GameOver según especificación).
+    /// Ahora utiliza el registro gestionado por PowerUpSpawner en lugar de búsquedas por tag.
     /// </summary>
     private void DestroyActivePowerups()
     {
-        // Tags usados en el juego para powerups/coleccionables
-        string[] tags = new[] { "Vidas", "Escoba", "Patronus", "Buckbeak" };
-
-        foreach (var t in tags)
+        if (powerUpSpawner != null)
         {
-            var objs = GameObject.FindGameObjectsWithTag(t);
-            if (objs == null || objs.Length == 0) continue;
-            foreach (var go in objs)
-            {
-                Destroy(go);
-            }
+            // Usar API del spawner: destruye y limpia su registro internamente
+            powerUpSpawner.DestroyAllActivePowerups();
+        }
+        else
+        {
+            // Si no hay spawner asignado, no intentamos búsquedas por tag (mejor mantener comportamiento predecible)
+            Debug.LogWarning("PowerUpSpawner no está asignado en GameManager. No se eliminaron powerups activos.");
         }
 
         // Aseguramos ocultar contador y audio asociado (ahora controlado por AudioManager)
@@ -395,7 +393,7 @@ public class GameManager : MonoBehaviour
         switch (CurrentState)
         {
             case GameState.Menu:
-                // la transici�n a Playing la debe manejar la UI -> StartGame()
+                // la transición a Playing la debe manejar la UI -> StartGame()
                 break;
             case GameState.Playing:
                 // Actualizar UI y contadores (no inputs de teclado)
@@ -433,13 +431,13 @@ public class GameManager : MonoBehaviour
                 }
                 if (score % 10 != 0)
                 {
-                    // mantenemos _lastPowerupSpawnScore logic en setter; nada que hacer aqu�
+                    // mantenemos _lastPowerupSpawnScore logic en setter; nada que hacer aquí
                 }
 
                 // Actualizar vidas en UI
                 if (UIManager.Instance != null) UIManager.Instance.UpdateLives(vidas);
                 if (vidas > 3) vidas = 3;
-                // Si se quedan sin vidas: mostrar men� de v�deo (pausa) o ir a GameOver seg�n bandera
+                // Si se quedan sin vidas: mostrar menú de vídeo (pausa) o ir a GameOver según bandera
                 if (vidas <= 0 && !repeatvideo)
                 {
                     if (cancelvideo)

@@ -1,10 +1,5 @@
 ﻿using UnityEngine;
 
-/// <summary>
-/// Componente genérico para proyectiles (actualizado para pooling):
-/// - No destruye el objeto; en su lugar lo desactiva para ser reutilizado por PlayerCombat.
-/// - Mantiene Init(direction) para lanzar.
-/// </summary>
 [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
 public class Projectile : MonoBehaviour
 {
@@ -35,9 +30,7 @@ public class Projectile : MonoBehaviour
     void OnEnable()
     {
         spawnTime = Time.time;
-        IgnoreTagsCollision("Pared");
-        IgnoreTagsCollision("Harry");
-        IgnoreTagsCollision("Vidas");
+        // Ignorar colisiones con "Harry" y "Pared" se gestiona via Layer Collision Matrix de Unity.
     }
 
     void Start()
@@ -96,29 +89,12 @@ public class Projectile : MonoBehaviour
         }
     }
 
-    private void IgnoreTagsCollision(string tag)
-    {
-        GameObject[] list = GameObject.FindGameObjectsWithTag(tag);
-        if (list == null || list.Length == 0) return;
-
-        Collider2D myCol = GetComponent<Collider2D>();
-        foreach (var go in list)
-        {
-            Collider2D other = go.GetComponent<Collider2D>();
-            if (other != null && myCol != null)
-            {
-                Physics2D.IgnoreCollision(other, myCol);
-            }
-        }
-    }
-
     void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Dementor"))
         {
             if (GameManager.Instance != null)
             {
-                GameManager.Instance.score++;
                 if (AudioManager.Instance != null)
                 {
                     AudioManager.Instance.PlaySFX("Hit");

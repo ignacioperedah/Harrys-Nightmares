@@ -3,7 +3,6 @@ using UnityEngine;
 public class Dementor : MonoBehaviour
 {
     public float speed;
-    private Rigidbody2D rb;
     private Transform target;
     private Animator anim;
 
@@ -14,111 +13,85 @@ public class Dementor : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
-        target = GameObject.FindGameObjectWithTag("Harry").GetComponent<Transform>();
+        // Preferir referencia desde GameManager (evita FindGameObjectWithTag)
+        if (GameManager.Instance != null && GameManager.Instance.harry != null)
+        {
+            target = GameManager.Instance.harry;
+        }
+        else
+        {
+            var harryObj = GameObject.FindGameObjectWithTag("Harry");
+            if (harryObj != null) target = harryObj.transform;
+        }
+
         anim = GetComponent<Animator>();
     }
 
-    public void OnEnable()
-    {
-        GameObject[] noCollision = GameObject.FindGameObjectsWithTag("Dementor");
-        GameObject[] noCollision2 = GameObject.FindGameObjectsWithTag("Pared");
-        GameObject[] noCollision3 = GameObject.FindGameObjectsWithTag("Vidas");
-
-        foreach (GameObject Dementor in noCollision)
-        {
-            Physics2D.IgnoreCollision(Dementor.GetComponent<Collider2D>(), GetComponent<Collider2D>());
-        }
-
-        foreach (GameObject Dementor in noCollision2)
-        {
-            Physics2D.IgnoreCollision(Dementor.GetComponent<Collider2D>(), GetComponent<Collider2D>());
-        }
-
-        foreach (GameObject Dementor in noCollision3)
-        {
-            Physics2D.IgnoreCollision(Dementor.GetComponent<Collider2D>(), GetComponent<Collider2D>());
-        }
-
-    }
     // Update is called once per frame
     void Update()
     {
-        transform.position = Vector2.MoveTowards(transform.position, target.position, speed * Time.deltaTime);
-        anim.SetBool("goL", false);
-        GameManager puntos = GameObject.FindGameObjectWithTag("GM").GetComponent<GameManager>();
-        GameManager reset = GameObject.FindGameObjectWithTag("GM").GetComponent<GameManager>();
-
-        if (Hit == true)
+        if (target != null)
         {
-            Destroy(gameObject);
-        }
-        
-        if (reset.reset == true || reset.CurrentState == GameState.GameOver || reset.vidas <= 0)
-        {
-            Destroy(gameObject);
+            transform.position = Vector2.MoveTowards(transform.position, target.position, speed * Time.deltaTime);
         }
 
-        if(target.position.x > transform.position.x)
+        if (anim != null)
         {
             anim.SetBool("goL", false);
+            if (target != null)
+            {
+                anim.SetBool("goL", target.position.x < transform.position.x);
+            }
         }
 
-        if (target.position.x < transform.position.x)
+        var gm = GameManager.Instance;
+        
+        if (gm != null && (gm.reset == true || gm.CurrentState == GameState.GameOver || gm.vidas <= 0))
         {
-            anim.SetBool("goL", true);
+            Destroy(gameObject);
+            return;
         }
 
         if (transform.position.x < -12 || transform.position.x > 12)
         {
             Destroy(gameObject);
+            return;
         }
 
         if (transform.position.y < -10 || transform.position.y > 10)
         {
             Destroy(gameObject);
-        }
-
-        GameObject[] noCollision = GameObject.FindGameObjectsWithTag("Dementor");
-        GameObject[] noCollision2 = GameObject.FindGameObjectsWithTag("Pared");
-        GameObject[] noCollision3 = GameObject.FindGameObjectsWithTag("Vidas");
-
-        foreach (GameObject Dementor in noCollision)
-        {
-            Physics2D.IgnoreCollision(Dementor.GetComponent<Collider2D>(), GetComponent<Collider2D>());
-        }
-
-        foreach (GameObject Dementor in noCollision2)
-        {
-            Physics2D.IgnoreCollision(Dementor.GetComponent<Collider2D>(), GetComponent<Collider2D>());
-        }
-
-        foreach (GameObject Dementor in noCollision3)
-        {
-            Physics2D.IgnoreCollision(Dementor.GetComponent<Collider2D>(), GetComponent<Collider2D>());
+            return;
         }
     }
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        GameManager puntos = GameObject.FindGameObjectWithTag("GM").GetComponent<GameManager>();
+        var gm = GameManager.Instance;
 
-        if (collision.gameObject.CompareTag("Hechizo") || collision.gameObject.CompareTag("Harry"))
-        {
-            Hit = true;
-        }
-
-        if(collision.gameObject.CompareTag("Harry") && puntos.powerupbuckbeakbool == true)
-        {
-            puntos.score++;
-            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Hit");
-        }
-    }
-    void OnCollisionExit2D(Collision2D collision)
-    {
         if (collision.gameObject.CompareTag("Hechizo"))
         {
-            Hit = false;
+            GameManager.Instance.score++;
         }
+
+        if (collision.gameObject.CompareTag("Harry") && gm != null && gm.powerupbuckbeakbool == true)
+        {
+            gm.score++;
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Hit");
+        }
+
+        Destroy(gameObject);
+    }
+
+    void OnDestroy()
+    {
+        // Desregistrar del spawner para mantener listas limpias
+        EnemySpawner.Instance?.Unregister(gameObject);
+    }
+
+    void OnDisable()
+    {
+        // También intentar desregistrar al desactivar (por pooling u otros)
+        EnemySpawner.Instance?.Unregister(gameObject);
     }
 }

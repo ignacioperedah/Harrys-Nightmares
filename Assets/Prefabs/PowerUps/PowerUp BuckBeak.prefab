@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 9087135149732185622}
   - component: {fileID: 9087135149732185625}
   - component: {fileID: 676223431501012636}
-  - component: {fileID: 982878515926683386}
+  - component: {fileID: 7334165930953918099}
   m_Layer: 7
   m_Name: PowerUp BuckBeak
   m_TagString: Buckbeak
@@ -145,7 +145,7 @@ PolygonCollider2D:
       - {x: 1.226421, y: 0.6818616}
       - {x: 0.9740012, y: 0.05083874}
       - {x: 0.25871146, y: -0.3789913}
---- !u!114 &982878515926683386
+--- !u!114 &7334165930953918099
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -154,8 +154,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 9087135149732185624}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a8e5cb20af027d546883a82e129674cf, type: 3}
+  m_Script: {fileID: 11500000, guid: 2336338cfbc04c249a21e4fbd92677a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  buckbeak: {fileID: 9087135149732185624}
-  polygonCollider: {fileID: 676223431501012636}

@@ -3,8 +3,8 @@ using UnityEngine;
 
 /// <summary>
 /// Componente responsable del combate del jugador:
-/// - Contiene referencias a prefabs de proyectiles (serializadas).
-/// - Implementa un pool simple (listas con búsqueda de objetos inactivos).
+/// - Contiene referencia a un único prefab de proyectil (serializada).
+/// - Implementa un pool simple (lista con búsqueda de objetos inactivos).
 /// - Expone API para botones: Hechizo() / hechizoNot().
 /// - No usa entrada de teclado (Android-only): spawn sólo vía UI/Joystick.
 /// </summary>
@@ -13,17 +13,13 @@ public class PlayerCombat : MonoBehaviour
 {
     public static PlayerCombat Instance { get; private set; }
 
-    [Header("Projectile Prefabs")]
-    [SerializeField] private GameObject patronumL;
-    [SerializeField] private GameObject patronumR;
-    [SerializeField] private GameObject patronumU;
+    [Header("Projectile Prefab")]
+    [SerializeField] private GameObject patronum;
 
     [Header("Pooling")]
     [SerializeField] private int initialPoolSize = 8;
 
-    private List<GameObject> poolL = new List<GameObject>();
-    private List<GameObject> poolR = new List<GameObject>();
-    private List<GameObject> poolU = new List<GameObject>();
+    private List<GameObject> pool = new List<GameObject>();
 
     // Estado de botón (UI) expuesto para PlayerController
     public bool ButtonSpell { get; private set; } = false;
@@ -36,10 +32,8 @@ public class PlayerCombat : MonoBehaviour
 
     void Start()
     {
-        // Pre-warm pools
-        WarmPool(patronumL, poolL);
-        WarmPool(patronumR, poolR);
-        WarmPool(patronumU, poolU);
+        // Pre-warm pool
+        WarmPool(patronum, pool);
     }
 
     void OnDestroy()
@@ -64,7 +58,7 @@ public class PlayerCombat : MonoBehaviour
         ButtonSpell = false;
     }
 
-    // Intenta seleccionar tipo y posición de proyectil y spawnearlo según estado/powerups/facing
+    // Intenta seleccionar posición de proyectil y spawnearlo según estado/powerups/facing
     private void TrySpawnSpell()
     {
         if (GameManager.Instance == null) return;
@@ -84,16 +78,16 @@ public class PlayerCombat : MonoBehaviour
         {
             if (facingLeft && !up)
             {
-                SpawnProjectileFromPool(poolL, patronumL, basePos + new Vector3(-0.6f, -0.1f, 0), Vector2.left);
+                SpawnProjectileFromPool(basePos + new Vector3(-0.6f, -0.1f, 0), Vector2.left);
             }
             else if (!facingLeft && !up)
             {
-                SpawnProjectileFromPool(poolR, patronumR, basePos + new Vector3(0.6f, -0.1f, 0), Vector2.right);
+                SpawnProjectileFromPool(basePos + new Vector3(0.6f, -0.1f, 0), Vector2.right);
             }
             else if (up && !salto)
             {
                 Vector3 offset = facingLeft ? new Vector3(-0.2f, 0.7f, 0) : new Vector3(0.2f, 0.7f, 0);
-                SpawnProjectileFromPool(poolU, patronumU, basePos + offset, Vector2.up);
+                SpawnProjectileFromPool(basePos + offset, Vector2.up);
             }
         }
         else
@@ -101,11 +95,11 @@ public class PlayerCombat : MonoBehaviour
             // Powerup de movimiento cambia offsets y solo dispara horizontal
             if (facingLeft)
             {
-                SpawnProjectileFromPool(poolL, patronumL, basePos + new Vector3(-1.6f, 0.1f, 0), Vector2.left);
+                SpawnProjectileFromPool(basePos + new Vector3(-1.6f, 0.1f, 0), Vector2.left);
             }
             else
             {
-                SpawnProjectileFromPool(poolR, patronumR, basePos + new Vector3(1.6f, 0.1f, 0), Vector2.right);
+                SpawnProjectileFromPool(basePos + new Vector3(1.6f, 0.1f, 0), Vector2.right);
             }
         }
     }
@@ -122,15 +116,15 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    private void SpawnProjectileFromPool(List<GameObject> pool, GameObject prefab, Vector3 pos, Vector2 dir)
+    private void SpawnProjectileFromPool(Vector3 pos, Vector2 dir)
     {
-        if (prefab == null) return;
+        if (patronum == null) return;
 
         GameObject instance = GetInactiveFromPool(pool);
         if (instance == null)
         {
             // ampliar pool si no hay inactivos
-            instance = Instantiate(prefab);
+            instance = Instantiate(patronum);
             pool.Add(instance);
         }
 
