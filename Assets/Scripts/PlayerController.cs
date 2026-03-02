@@ -144,7 +144,8 @@ public class PlayerController : MonoBehaviour
         bool spellPressed = (uiSpell && !_previousSpellButton);
 
         // Actualizamos animaciones cada frame (valores simples)
-        UpdateAnimations(spellPressed);
+        // Pasamos el estado 'up' para que se pueda activar la animación de disparo hacia arriba
+        UpdateAnimations(spellPressed, up);
 
         // actualizar tracker del botón para detectar borde en siguiente frame
         _previousSpellButton = uiSpell;
@@ -254,9 +255,12 @@ public class PlayerController : MonoBehaviour
         previousPosition = tr.position;
     }
 
-    private void UpdateAnimations(bool spellPressed)
+    private void UpdateAnimations(bool spellPressed, bool up)
     {
         if (anim == null) return;
+
+        // sincronizar estado de apuntado hacia arriba
+        anim.SetBool("up", up);
 
         // salto: basamos en la altura
         bool enAire = tr.position.y > 0f;
@@ -277,8 +281,17 @@ public class PlayerController : MonoBehaviour
         // disparo: activamos solo cuando se produce el evento de pulsación (edge)
         if (spellPressed)
         {
-            anim.SetBool("disparoL", facingLeft);
-            anim.SetBool("disparoR", !facingLeft);
+            // Priorizar animación de disparo hacia arriba cuando el jugador está apuntando arriba
+            if (!PowerupEscoba && !PowerupBuckbeak)
+            {
+                anim.SetBool("disparoL", false);
+                anim.SetBool("disparoR", false);
+            }
+            else
+            {
+                anim.SetBool("disparoL", facingLeft);
+                anim.SetBool("disparoR", !facingLeft);
+            }
         }
         else
         {
@@ -323,6 +336,7 @@ public class PlayerController : MonoBehaviour
             anim.SetBool("disparoR", false);
             anim.SetBool("salto", false);
             anim.SetBool("goLeft", false);
+            anim.SetBool("up", false);
         }
 
         // Reset trackers
