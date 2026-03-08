@@ -6,7 +6,7 @@ using UnityEngine;
 /// - Prefabs serializados en el inspector.
 /// - Método público SpawnPowerup() para invocar desde GameManager.
 /// - Mantiene un registro en memoria de powerups instanciados para evitar búsquedas por tag.
-/// - Implementa Singleton y limpieza periódica de referencias nulas.
+/// - Singleton robusto con limpieza incremental por pasos (stepwise) cada frame del cleanTimer.
 /// </summary>
 public class PowerUpSpawner : MonoBehaviour
 {
@@ -26,17 +26,27 @@ public class PowerUpSpawner : MonoBehaviour
     private readonly List<GameObject> _activePowerups = new List<GameObject>();
     public IReadOnlyList<GameObject> ActivePowerups => _activePowerups.AsReadOnly();
 
-    // Singleton
+    // Singleton robusto: persiste entre escenas si es necesario
     public static PowerUpSpawner Instance { get; private set; }
 
-    // Limpieza periódica
-    private float cleanTimer;
+    // Limpieza incremental (stepwise): en lugar de recorrer toda la lista cada CleanInterval,
+    // avanzamos un índice por Update, distribuyendo el coste entre frames.
+    private float _cleanTimer;
     private const float CleanIntervalSeconds = 2f;
+    private int _cleanIndex; // índice actual del paso de limpieza incremental
 
     void Awake()
     {
-        if (Instance == null) Instance = this;
-        else if (Instance != this) Destroy(gameObject);
+        // Singleton robusto: si ya hay instancia, destruir el duplicado sin afectar la escena
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else if (Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
     }
 
     void OnDestroy()
@@ -46,12 +56,13 @@ public class PowerUpSpawner : MonoBehaviour
 
     void Update()
     {
-        // Ejecutar limpieza periódica de referencias nulas para no sobrecargar la CPU.
-        cleanTimer -= Time.deltaTime;
-        if (cleanTimer <= 0f)
+        // Limpieza incremental: distribuye el trabajo en múltiples frames.
+        // Cada vez que el timer expira, procesamos un lote de entradas para no saturar un frame.
+        _cleanTimer -= Time.deltaTime;
+        if (_cleanTimer <= 0f)
         {
-            CleanNullReferences();
-            cleanTimer = CleanIntervalSeconds;
+            StepCleanNullReferences();
+            _cleanTimer = CleanIntervalSeconds;
         }
     }
 
@@ -64,12 +75,23 @@ public class PowerUpSpawner : MonoBehaviour
         candidates.Add(0);
 
         // Si cualquiera de los powerups de "movimiento" está activo en el juego, no añadir
-        bool movementPowerupActive = GameManager.Instance != null && (GameManager.Instance.powerupescobabool || GameManager.Instance.powerupbuckbeakbool);
+        bool movementPowerupActive = GameManager.Instance != null &&
+            (GameManager.Instance.powerupescobabool || GameManager.Instance.powerupbuckbeakbool);
 
-        // Evitar spawnear Escoba/BuckBeak/Patronus si ya hay una instancia registrada en la lista
-        bool escobaInScene = _activePowerups.Exists(go => go != null && go.CompareTag(TagEscoba));
-        bool buckInScene = _activePowerups.Exists(go => go != null && go.CompareTag(TagBuckbeak));
-        bool patronusInScene = _activePowerups.Exists(go => go != null && go.CompareTag(TagPatronus));
+        // Evitar spawnear Escoba/BuckBeak/Patronus si ya hay una instancia registrada en la lista.
+        // Recorrido único de la lista para calcular los tres flags a la vez.
+        bool escobaInScene = false;
+        bool buckInScene = false;
+        bool patronusInScene = false;
+        for (int i = 0; i < _activePowerups.Count; i++)
+        {
+            var go = _activePowerups[i];
+            if (go == null) continue;
+            if (!escobaInScene && go.CompareTag(TagEscoba)) escobaInScene = true;
+            else if (!buckInScene && go.CompareTag(TagBuckbeak)) buckInScene = true;
+            else if (!patronusInScene && go.CompareTag(TagPatronus)) patronusInScene = true;
+            if (escobaInScene && buckInScene && patronusInScene) break;
+        }
 
         if (!movementPowerupActive && !escobaInScene && !buckInScene)
         {
@@ -116,19 +138,22 @@ public class PowerUpSpawner : MonoBehaviour
         {
             // Registrar para permitir consultas rápidas sin FindByTag
             _activePowerups.Add(spawned);
+            // Resetear índice de limpieza para que empiece desde el principio en el próximo ciclo
+            _cleanIndex = 0;
         }
     }
 
     /// <summary>
-    /// Permite que powerups se desregistren explícitamente (por ejemplo, si el powerup tiene un script
-    /// que llama a Unregister en OnDestroy/OnDisable).
+    /// Permite que powerups se desregistren explícitamente al recogerse o destruirse.
+    /// Exclusivamente a través del Singleton: nunca usar FindObjectOfType.
     /// </summary>
     public void Unregister(GameObject go)
     {
         if (go == null)
         {
-            // limpieza de referencias nulas
+            // limpieza de referencias nulas directa cuando no hay objeto concreto
             _activePowerups.RemoveAll(item => item == null);
+            _cleanIndex = 0;
             return;
         }
 
@@ -151,13 +176,56 @@ public class PowerUpSpawner : MonoBehaviour
         }
 
         _activePowerups.Clear();
+        _cleanIndex = 0;
     }
 
     /// <summary>
-    /// Limpieza rápida de referencias nulas en el registro.
+    /// Limpieza incremental (stepwise): procesa un lote de entradas por llamada
+    /// en lugar de recorrer toda la lista de golpe, distribuyendo el coste de CPU.
+    /// Lote máximo: 5 entradas por ciclo (ajustable según tamaño esperado de la lista).
     /// </summary>
     public void CleanNullReferences()
     {
+        // Mantener compatibilidad con llamadas externas: limpiar todo de una vez
         _activePowerups.RemoveAll(item => item == null);
+        _cleanIndex = 0;
+    }
+
+    private void StepCleanNullReferences()
+    {
+        if (_activePowerups.Count == 0)
+        {
+            _cleanIndex = 0;
+            return;
+        }
+
+        // Lote máximo por ciclo: evitamos recorrer listas grandes en un solo frame
+        const int batchSize = 5;
+        int processed = 0;
+
+        // Recorremos hacia atrás desde _cleanIndex para no invalidar índices al eliminar
+        while (_cleanIndex < _activePowerups.Count && processed < batchSize)
+        {
+            if (_activePowerups[_cleanIndex] == null)
+            {
+                // Swap con el último y eliminar O(1) en lugar de RemoveAt O(n)
+                int last = _activePowerups.Count - 1;
+                _activePowerups[_cleanIndex] = _activePowerups[last];
+                _activePowerups.RemoveAt(last);
+                // No avanzar _cleanIndex: el elemento movido aún no fue revisado
+            }
+            else
+            {
+                _cleanIndex++;
+            }
+
+            processed++;
+        }
+
+        // Si llegamos al final, reiniciamos para el siguiente ciclo del timer
+        if (_cleanIndex >= _activePowerups.Count)
+        {
+            _cleanIndex = 0;
+        }
     }
 }

@@ -21,12 +21,13 @@ public class EnemySpawner : MonoBehaviour // Se encargara de generar enemigos en
     private readonly List<GameObject> _activeEnemies = new List<GameObject>();
     public IReadOnlyList<GameObject> ActiveEnemies => _activeEnemies.AsReadOnly();
 
-    // Singleton ligero para permitir unregister desde Dementor sin Find
+    // Singleton ligero para permitir Unregister desde Dementor sin Find
     public static EnemySpawner Instance { get; private set; }
 
-    // Limpieza periódica
-    private float cleanTimer;
+    // Limpieza incremental: distribuye el recorrido de la lista entre frames
+    private float _cleanTimer;
     private const float CleanIntervalSeconds = 2f;
+    private int _cleanIndex; // índice actual del paso de limpieza incremental
 
     void Awake()
     {
@@ -41,12 +42,13 @@ public class EnemySpawner : MonoBehaviour // Se encargara de generar enemigos en
 
     void Update()
     {
-        // Ejecutar limpieza periódica de referencias nulas para no sobrecargar la CPU.
-        cleanTimer -= Time.deltaTime;
-        if (cleanTimer <= 0f)
+        // Limpieza incremental: en lugar de RemoveAll en un único frame,
+        // procesamos un lote pequeño por ciclo del timer.
+        _cleanTimer -= Time.deltaTime;
+        if (_cleanTimer <= 0f)
         {
-            CleanNullReferences();
-            cleanTimer = CleanIntervalSeconds;
+            StepCleanNullReferences();
+            _cleanTimer = CleanIntervalSeconds;
         }
     }
 
@@ -98,17 +100,21 @@ public class EnemySpawner : MonoBehaviour // Se encargara de generar enemigos en
         if (go != null)
         {
             _activeEnemies.Add(go);
+            // Resetear el índice para que el próximo ciclo empiece desde el principio
+            _cleanIndex = 0;
         }
     }
 
     /// <summary>
     /// Permite que Dementor desregistre su GameObject al destruirse.
+    /// Siempre via Singleton: nunca usar FindObjectOfType.
     /// </summary>
     public void Unregister(GameObject go)
     {
         if (go == null)
         {
             _activeEnemies.RemoveAll(item => item == null);
+            _cleanIndex = 0;
             return;
         }
 
@@ -116,10 +122,52 @@ public class EnemySpawner : MonoBehaviour // Se encargara de generar enemigos en
     }
 
     /// <summary>
-    /// Limpia referencias nulas del registro de enemigos.
+    /// Limpieza completa de referencias nulas (compatibilidad con llamadas externas).
     /// </summary>
     public void CleanNullReferences()
     {
         _activeEnemies.RemoveAll(item => item == null);
+        _cleanIndex = 0;
+    }
+
+    /// <summary>
+    /// Limpieza incremental (stepwise): procesa un lote de entradas por llamada
+    /// en lugar de recorrer toda la lista de golpe, distribuyendo el coste de CPU.
+    /// Usa swap con el último elemento para lograr eliminación O(1).
+    /// </summary>
+    private void StepCleanNullReferences()
+    {
+        if (_activeEnemies.Count == 0)
+        {
+            _cleanIndex = 0;
+            return;
+        }
+
+        const int batchSize = 5;
+        int processed = 0;
+
+        while (_cleanIndex < _activeEnemies.Count && processed < batchSize)
+        {
+            if (_activeEnemies[_cleanIndex] == null)
+            {
+                // Swap con el último elemento y eliminar: O(1) vs O(n) de RemoveAt normal
+                int last = _activeEnemies.Count - 1;
+                _activeEnemies[_cleanIndex] = _activeEnemies[last];
+                _activeEnemies.RemoveAt(last);
+                // No avanzar _cleanIndex: el elemento movido aún no fue revisado
+            }
+            else
+            {
+                _cleanIndex++;
+            }
+
+            processed++;
+        }
+
+        // Reiniciar al llegar al final para el próximo ciclo del timer
+        if (_cleanIndex >= _activeEnemies.Count)
+        {
+            _cleanIndex = 0;
+        }
     }
 }

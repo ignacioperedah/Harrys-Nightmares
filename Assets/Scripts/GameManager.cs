@@ -49,8 +49,8 @@ public class GameManager : MonoBehaviour
     bool goRight = false;
 
     /// <summary>
-    /// Establece la orientación del jugador (true = izquierda).
-    /// PlayerController llamará a esto para mantener la única fuente de verdad.
+    /// Establece la orientaciÃ³n del jugador (true = izquierda).
+    /// PlayerController llamarÃ¡ a esto para mantener la Ãºnica fuente de verdad.
     /// </summary>
     public void SetFacing(bool left)
     {
@@ -73,7 +73,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private EnemySpawner spawner;
     private int _score = 0;
 
-    // Evita spawn duplicado por el mismo valor de score múltiplo de 10
+    // Evita spawn duplicado por el mismo valor de score mÃºltiplo de 10
     private int _lastPowerupSpawnScore = -1;
 
     public int score
@@ -87,7 +87,7 @@ public class GameManager : MonoBehaviour
             if (spawner != null) spawner.UpdateSpawnRate(delay);
             if (UIManager.Instance != null) UIManager.Instance.UpdateScore(_score);
 
-            // Spawn de powerup cuando score es múltiplo de 10 (y no 0).
+            // Spawn de powerup cuando score es mÃºltiplo de 10 (y no 0).
             if (_score != 0 && _score % 10 == 0)
             {
                 // Solo spawnear una vez para ese valor de score
@@ -99,7 +99,7 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                // reset para futuros múltiplos
+                // reset para futuros mÃºltiplos
                 _lastPowerupSpawnScore = -1;
             }
         }
@@ -122,7 +122,7 @@ public class GameManager : MonoBehaviour
             OnEnterState(_currentState);
         }
     }
-    // Indica que la pausa actual es por mostrar el MenuVideo (no por menú pausa normal)
+    // Indica que la pausa actual es por mostrar el MenuVideo (no por menÃº pausa normal)
     private bool _pausedForVideo = false;
 
     void Awake()
@@ -181,7 +181,7 @@ public class GameManager : MonoBehaviour
             case GameState.GameOver:
                 // limpiar estado de juego, mostrar GameOver y detener spawner
                 Time.timeScale = 1f;
-                PatronusExit();
+                PowerUpHandler.Instance.CancelAll();
                 Up = false;
                 if (animHarry != null) animHarry.SetBool("up", false);
                 // Stop Patronus music if playing
@@ -270,29 +270,10 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
-    public void Escoba()
+
+    public void SumarVida()
     {
-        if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(true);
-        if (UIManager.Instance != null) UIManager.Instance.UpdateCounterText($"{contador}");
-        StartCoroutine(EscobaTimer());
-    }
-    public void Buckbeak()
-    {
-        if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(true);
-        if (UIManager.Instance != null) UIManager.Instance.UpdateCounterText($"{contadorbuckbeak}");
-        StartCoroutine(BuckbeakTimer());
-    }
-    public void Patronus()
-    {
-        if (harrypatronus != null) harrypatronus.SetActive(true);
-        StartCoroutine(PatronusTimer());
-        superpatronus = true;
-    }
-    public void PatronusExit()
-    {
-        if (harrypatronus != null) harrypatronus.SetActive(false);
-        superpatronus = false;
-        contadorpatronus = 10.0f;
+        if (vidas < 3) vidas++;
     }
 
     public void CancelVideo()
@@ -396,37 +377,40 @@ public class GameManager : MonoBehaviour
                 // la transición a Playing la debe manejar la UI -> StartGame()
                 break;
             case GameState.Playing:
+                // Cachear singleton por frame para evitar múltiples búsquedas de tabla hash
+                var ui = UIManager.Instance;
+
                 // Actualizar UI y contadores (no inputs de teclado)
                 if (powerupescobabool)
                 {
-                    if (UIManager.Instance != null) UIManager.Instance.UpdateCounterText($"{contador}");
-                    if (UIManager.Instance != null) UIManager.Instance.SetJumpButtonActive(false);
+                    if (ui != null) ui.UpdateCounterText($"{contador}");
+                    if (ui != null) ui.SetJumpButtonActive(false);
                 }
                 else
                 {
-                    if (UIManager.Instance != null) UIManager.Instance.SetJumpButtonActive(true);
+                    if (ui != null) ui.SetJumpButtonActive(true);
                 }
                 if (contador <= 0)
                 {
                     powerupescobabool = false;
-                    if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(false);
+                    if (ui != null) ui.SetCounterActive(false);
                     contador = 20;
                 }
                 if (powerupbuckbeakbool)
                 {
-                    if (UIManager.Instance != null) UIManager.Instance.UpdateCounterText($"{contadorbuckbeak}");
-                    if (UIManager.Instance != null) UIManager.Instance.SetJumpButtonActive(false);
-                    if (UIManager.Instance != null) UIManager.Instance.SetSpellButtonActive(false);
+                    if (ui != null) ui.UpdateCounterText($"{contadorbuckbeak}");
+                    if (ui != null) ui.SetJumpButtonActive(false);
+                    if (ui != null) ui.SetSpellButtonActive(false);
                 }
                 if (!powerupbuckbeakbool && !powerupescobabool)
                 {
-                    if (UIManager.Instance != null) UIManager.Instance.SetJumpButtonActive(true);
-                    if (UIManager.Instance != null) UIManager.Instance.SetSpellButtonActive(true);
+                    if (ui != null) ui.SetJumpButtonActive(true);
+                    if (ui != null) ui.SetSpellButtonActive(true);
                 }
                 if (contadorbuckbeak <= 0)
                 {
                     powerupbuckbeakbool = false;
-                    if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(false);
+                    if (ui != null) ui.SetCounterActive(false);
                     contadorbuckbeak = 15;
                 }
                 if (score % 10 != 0)
@@ -435,7 +419,7 @@ public class GameManager : MonoBehaviour
                 }
 
                 // Actualizar vidas en UI
-                if (UIManager.Instance != null) UIManager.Instance.UpdateLives(vidas);
+                if (ui != null) ui.UpdateLives(vidas);
                 if (vidas > 3) vidas = 3;
                 // Si se quedan sin vidas: mostrar menú de vídeo (pausa) o ir a GameOver según bandera
                 if (vidas <= 0 && !repeatvideo)
@@ -462,50 +446,5 @@ public class GameManager : MonoBehaviour
                 // control por UI
                 break;
         }
-    }
-    IEnumerator EscobaTimer()
-    {
-        while (contador > 5)
-        {
-            yield return new WaitForSeconds(1);
-            contador--;
-        }
-        while (contador <= 5 && contador >= 0)
-        {
-            RendHarry.color = new Color(1f, 1f, 1f, 0.5f);
-            yield return new WaitForSeconds(0.5f);
-            RendHarry.color = new Color(1f, 1f, 1f, 1f);
-            yield return new WaitForSeconds(0.5f);
-            contador--;
-        }
-        // When timer finished, ensure Escoba audio is stopped
-        if (AudioManager.Instance != null) AudioManager.Instance.StopMusic("Escoba");
-    }
-    IEnumerator BuckbeakTimer()
-    {
-        while (contadorbuckbeak > 5)
-        {
-            yield return new WaitForSeconds(1);
-            contadorbuckbeak--;
-        }
-        while (contadorbuckbeak <= 5 && contadorbuckbeak >= 0)
-        {
-            RendHarry.color = new Color(1f, 1f, 1f, 0.5f);
-            yield return new WaitForSeconds(0.5f);
-            RendHarry.color = new Color(1f, 1f, 1f, 1f);
-            yield return new WaitForSeconds(0.5f);
-            contadorbuckbeak--;
-        }
-        if (AudioManager.Instance != null) AudioManager.Instance.StopMusic("Escoba");
-    }
-    IEnumerator PatronusTimer()
-    {
-        while (contadorpatronus >= 0)
-        {
-            yield return new WaitForSeconds(1);
-            Instantiate(patronusgrande, new Vector3(-6, 2.6f, 0), Quaternion.identity);
-            contadorpatronus--;
-        }
-        PatronusExit();
     }
 }

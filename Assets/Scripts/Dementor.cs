@@ -30,26 +30,22 @@ public class Dementor : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        var gm = GameManager.Instance;
+
+        if (gm != null && (gm.reset || gm.CurrentState == GameState.GameOver || gm.vidas <= 0))
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         if (target != null)
         {
             transform.position = Vector2.MoveTowards(transform.position, target.position, speed * Time.deltaTime);
         }
 
-        if (anim != null)
+        if (anim != null && target != null)
         {
-            anim.SetBool("goL", false);
-            if (target != null)
-            {
-                anim.SetBool("goL", target.position.x < transform.position.x);
-            }
-        }
-
-        var gm = GameManager.Instance;
-        
-        if (gm != null && (gm.reset == true || gm.CurrentState == GameState.GameOver || gm.vidas <= 0))
-        {
-            Destroy(gameObject);
-            return;
+            anim.SetBool("goL", target.position.x < transform.position.x);
         }
 
         if (transform.position.x < -12 || transform.position.x > 12)

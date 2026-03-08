@@ -1,9 +1,11 @@
+using System.Diagnostics;
 using UnityEngine;
 
 /// <summary>
 /// Controlador del jugador (refactor de Harry.cs).
 /// - Fuente de verdad para vidas y powerups: GameManager.Instance.
-/// - Entrada en Update, física en FixedUpdate.
+/// - Entrada en Update, física estrictamente en FixedUpdate (SRP).
+/// - gravityScale y restauraciones de Rigidbody SOLO en FixedUpdate.
 /// - Animaciones basadas en la dirección real (facing) y sincronizadas con GameManager.
 /// - Maneja la entrada de salto (UI/JS) directamente. Sin teclado.
 /// </summary>
@@ -20,14 +22,15 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Vector2 escalaBuckbeak = new Vector2(2.25f, 2.25f);
 
     // Referencias
-    [SerializeField] private Joystick JSmove; // ahora el Joystick está directamente aquí
+    [SerializeField] private Joystick JSmove; // Joystick de movimiento
     private Animator anim;
     private Rigidbody2D rb;
     private Transform tr;
 
-    // Estado interno
+    // Estado interno de input (capturado en Update, consumido en FixedUpdate)
     private bool jumpRequested;
     private float horizontalInput;
+    private float verticalInput; // captura vertical en Update para uso en FixedUpdate
     private Vector3 previousPosition;
     private GameState? _previousGameState;
 
@@ -38,7 +41,8 @@ public class PlayerController : MonoBehaviour
     private bool _wasPowerupEscoba;
     private bool _wasPowerupBuckbeak;
 
-    // Trackers de solicitud para aplicar cambios de Rigidbody en FixedUpdate
+    // Flags de solicitud para que FixedUpdate aplique cambios físicos de forma segura.
+    // NUNCA modificar Rigidbody directamente desde Update.
     private bool restoreFromEscobaRequested;
     private bool restoreFromBuckbeakRequested;
     private bool resetDefaultsRequested;
@@ -99,43 +103,48 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // Si el jugador está sin vidas: anular input del joystick (antes lo hacía Controller)
+        // Si el jugador está sin vidas: anular input del joystick
         if (Vidas < 1)
         {
             if (JSmove != null) JSmove.input = Vector2.zero;
-            // No tocar el background aquí: UIManager / GameManager gestionan la visibilidad
             DetectAndHandleStateChange();
             return;
         }
+
+        // --- CAPTURA DE INPUT (solo en Update, sin tocar física) ---
 
         // Entrada horizontal: solo joystick. No teclado.
         float axis = 0f;
         if (JSmove != null) axis = JSmove.Horizontal;
         horizontalInput = axis;
 
-        // Actualizar facing sólo cuando hay entrada horizontal no nula.
+        // Capturar vertical para uso en FixedUpdate (evitar leerlo desde FixedUpdate directamente)
+        if (JSmove != null) verticalInput = JSmove.Vertical;
+        else verticalInput = 0f;
+
+        // Actualizar facing solo cuando hay entrada horizontal no nula
         if (Mathf.Abs(horizontalInput) > 0.01f)
         {
             bool newFacingLeft = horizontalInput < 0f;
             if (newFacingLeft != facingLeft)
             {
                 facingLeft = newFacingLeft;
-                // sincronizar con GameManager (fuente de verdad para orientación)
+                // Sincronizar con GameManager (fuente de verdad para orientación)
                 if (GameManager.Instance != null) GameManager.Instance.SetFacing(facingLeft);
             }
         }
 
         // Up (apuntar arriba) -> lo determina joystick vertical (sin teclado)
         bool up = false;
-        if (JSmove != null && JSmove.Vertical > 0.95f && tr.position.y < 0f) up = true;
+        if (JSmove != null && verticalInput > 0.95f && tr.position.y < 0f) up = true;
         if (GameManager.Instance != null) GameManager.Instance.Up = up;
 
         // Salto: UI (detectamos borde para evitar saltos repetidos por hold)
+        // jumpRequested se consume en FixedUpdate; NO se aplica AddForce aquí.
         bool uiJumpEdge = _uiJumpPressed && !_previousUIJump;
         if (uiJumpEdge && tr.position.y < 0 && !PowerupEscoba && !PowerupBuckbeak)
         {
-            // Solo marcamos la intención; la física se aplica en FixedUpdate
-            jumpRequested = true;
+            jumpRequested = true; // Solo marcar intención; física en FixedUpdate
         }
         _previousUIJump = _uiJumpPressed;
 
@@ -143,14 +152,14 @@ public class PlayerController : MonoBehaviour
         bool uiSpell = PlayerCombat.Instance != null && PlayerCombat.Instance.ButtonSpell;
         bool spellPressed = (uiSpell && !_previousSpellButton);
 
-        // Actualizamos animaciones cada frame (valores simples)
-        // Pasamos el estado 'up' para que se pueda activar la animación de disparo hacia arriba
+        // Actualizamos animaciones cada frame (valores simples, sin físico)
         UpdateAnimations(spellPressed, up);
 
-        // actualizar tracker del botón para detectar borde en siguiente frame
+        // Actualizar tracker del botón para detectar borde en siguiente frame
         _previousSpellButton = uiSpell;
 
-        // ---- Detectar transiciones de powerups y solicitar restauración (aplicar en FixedUpdate) ----
+        // --- DETECTAR TRANSICIONES DE POWERUPS ---
+        // Solo marcamos flags; la restauración física se aplica en FixedUpdate.
         bool escobaActive = PowerupEscoba;
         bool buckActive = PowerupBuckbeak;
 
@@ -166,11 +175,11 @@ public class PlayerController : MonoBehaviour
             restoreFromBuckbeakRequested = true;
         }
 
-        // actualizar trackers
+        // Actualizar trackers para el próximo frame
         _wasPowerupEscoba = escobaActive;
         _wasPowerupBuckbeak = buckActive;
 
-        // detectar cambios de estado para resetear si es necesario
+        // Detectar cambios de estado para resetear si es necesario
         DetectAndHandleStateChange();
     }
 
@@ -178,19 +187,21 @@ public class PlayerController : MonoBehaviour
     {
         if (GameManager.Instance == null || GameManager.Instance.CurrentState != GameState.Playing) return;
 
-        // Aplicar solicitudes de restauración solicitadas en Update (modifican Rigidbody/transform físicos)
+        // --- RESTAURACIONES FÍSICAS (siempre en FixedUpdate, nunca en Update) ---
+
         if (restoreFromEscobaRequested)
         {
             restoreFromEscobaRequested = false;
             tr.localScale = escalaNormal;
+            // Restaurar gravedad al terminar powerup Escoba
             rb.gravityScale = 1f;
-            // animación se mantiene sincronizada por UpdateAnimations
         }
 
         if (restoreFromBuckbeakRequested)
         {
             restoreFromBuckbeakRequested = false;
             tr.localScale = escalaNormal;
+            // Restaurar gravedad al terminar powerup Buckbeak
             rb.gravityScale = 1f;
         }
 
@@ -199,13 +210,13 @@ public class PlayerController : MonoBehaviour
             resetDefaultsRequested = false;
             tr.localScale = escalaNormal;
             rb.gravityScale = 1f;
+            // Detener completamente la velocidad al resetear (ej. GameOver/Menú)
             rb.velocity = Vector2.zero;
         }
 
-        // Saltar (física) - siempre en FixedUpdate
+        // --- SALTO (AddForce siempre en FixedUpdate) ---
         if (jumpRequested)
         {
-            // Consumir la petición de salto aquí (la petición se generó en Update)
             jumpRequested = false;
             if (tr.position.y < 0 && !PowerupEscoba && !PowerupBuckbeak)
             {
@@ -214,42 +225,50 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        // Movimiento horizontal: en suelo y en aire con multiplicador
+        // --- MOVIMIENTO HORIZONTAL (física en FixedUpdate con Time.fixedDeltaTime) ---
         if (!PowerupEscoba && !PowerupBuckbeak)
         {
+            // En suelo: velocidad completa; en aire: multiplicador reducido
             float speed = VelocidadSuelo * (tr.position.y > 0.01f ? MultiplicadorAire : 1f);
             Vector2 targetVelocity = new Vector2(horizontalInput * speed, rb.velocity.y);
             rb.velocity = targetVelocity;
         }
         else
         {
-            // Movimiento cuando estamos montados en escoba o Buckbeak:
+            // Movimiento con powerup: sin gravedad, desplazamiento manual con MovePosition.
+            // Usar Time.fixedDeltaTime garantiza independencia de framerate en física.
             rb.velocity = Vector2.zero;
-            float xInput = horizontalInput;
-            float yInput = 0f;
-            if (JSmove != null) yInput = JSmove.Vertical;
 
             if (PowerupEscoba)
             {
                 tr.localScale = escalaEscoba;
+                // gravityScale = 0 en FixedUpdate: correcto y seguro para el motor de física
                 rb.gravityScale = 0f;
-                Vector3 delta = new Vector3(xInput * EscobaMoveMultiplier * Time.fixedDeltaTime, yInput * EscobaMoveMultiplier * Time.fixedDeltaTime, 0f);
+                Vector3 delta = new Vector3(
+                    horizontalInput * EscobaMoveMultiplier * Time.fixedDeltaTime,
+                    verticalInput * EscobaMoveMultiplier * Time.fixedDeltaTime,
+                    0f);
                 rb.MovePosition(tr.position + delta);
             }
             else if (PowerupBuckbeak)
             {
                 tr.localScale = escalaBuckbeak;
+                // gravityScale = 0 en FixedUpdate: correcto y seguro para el motor de física
                 rb.gravityScale = 0f;
-                Vector3 delta = new Vector3(xInput * BuckbeakMoveMultiplier * Time.fixedDeltaTime, yInput * BuckbeakMoveMultiplier * Time.fixedDeltaTime, 0f);
+                Vector3 delta = new Vector3(
+                    horizontalInput * BuckbeakMoveMultiplier * Time.fixedDeltaTime,
+                    verticalInput * BuckbeakMoveMultiplier * Time.fixedDeltaTime,
+                    0f);
                 rb.MovePosition(tr.position + delta);
             }
         }
 
-        // Seguridad: si no hay powerups asegurar valores por defecto (evita quedarse escalado por errores)
+        // Seguridad: si no hay powerups, asegurar valores por defecto para evitar estados residuales.
+        // Solo asignamos si el valor difiere para evitar escrituras redundantes cada FixedUpdate.
         if (!PowerupEscoba && !PowerupBuckbeak)
         {
-            tr.localScale = escalaNormal;
-            rb.gravityScale = 1f;
+            if (tr.localScale != (Vector3)escalaNormal) tr.localScale = escalaNormal;
+            if (rb.gravityScale != 1f) rb.gravityScale = 1f;
         }
 
         previousPosition = tr.position;
@@ -259,18 +278,18 @@ public class PlayerController : MonoBehaviour
     {
         if (anim == null) return;
 
-        // sincronizar estado de apuntado hacia arriba
+        // Sincronizar estado de apuntado hacia arriba
         anim.SetBool("up", up);
 
-        // salto: basamos en la altura
+        // Salto: basamos en la altura
         bool enAire = tr.position.y > 0f;
         anim.SetBool("salto", enAire);
 
-        // powerups animaciones
+        // Powerups animaciones
         anim.SetBool("escoba", PowerupEscoba);
         anim.SetBool("buckbeak", PowerupBuckbeak);
 
-        // correr / orientación
+        // Correr / orientación
         bool movingRight = horizontalInput > 0f;
         bool movingLeft = horizontalInput < 0f;
 
@@ -278,11 +297,10 @@ public class PlayerController : MonoBehaviour
         anim.SetBool("runLeft", movingLeft && !PowerupEscoba && !PowerupBuckbeak);
         anim.SetBool("goLeft", facingLeft);
 
-        // disparo: activamos solo cuando se produce el evento de pulsación (edge)
+        // Disparo: activamos solo cuando se produce el evento de pulsación (edge)
         if (spellPressed)
         {
-            // Priorizar animación de disparo hacia arriba cuando el jugador está apuntando arriba
-            if (!PowerupEscoba && !PowerupBuckbeak)
+            if (PowerupBuckbeak)
             {
                 anim.SetBool("disparoL", false);
                 anim.SetBool("disparoR", false);
@@ -317,14 +335,15 @@ public class PlayerController : MonoBehaviour
 
     private void ResetPlayerToDefault()
     {
-        // Restaurar valores por defecto (no aplicar Rigidbody directamente aquí)
+        // Restaurar escala visual inmediatamente (no físico)
         tr.localScale = escalaNormal;
-        // Solicitar al FixedUpdate que haga los cambios físicos seguros
+        // Solicitar al FixedUpdate que haga los cambios físicos seguros (gravityScale, velocity)
         resetDefaultsRequested = true;
 
         // Reset de estado no-físico
         jumpRequested = false;
         horizontalInput = 0f;
+        verticalInput = 0f;
 
         if (anim != null)
         {

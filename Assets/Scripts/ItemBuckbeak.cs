@@ -5,16 +5,8 @@ public class ItemBuckbeak : CollectibleBase
     public override void OnCollect()
     {
         base.OnCollect();
-        var gm = GameManager.Instance;
-        if (gm != null)
-        {
-            gm.powerupbuckbeakbool = true;
-            gm.Buckbeak();
-        }
-
-        // Desregistrar del spawner si existe (uso del singleton)
+        PowerUpHandler.Instance?.ActivateBuckbeak();
         PowerUpSpawner.Instance?.Unregister(gameObject);
-
         Destroy(gameObject);
     }
 }

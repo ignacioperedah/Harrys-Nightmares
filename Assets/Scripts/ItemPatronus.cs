@@ -3,15 +3,8 @@ public class ItemPatronus : CollectibleBase
     public override void OnCollect()
     {
         base.OnCollect();
-        var gm = GameManager.Instance;
-        if (gm != null)
-        {
-            gm.Patronus();
-        }
-
-        // Desregistrar del spawner si existe (uso del singleton)
+        PowerUpHandler.Instance?.ActivatePatronus();
         PowerUpSpawner.Instance?.Unregister(gameObject);
-
         Destroy(gameObject);
     }
 }
