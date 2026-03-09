@@ -65,13 +65,14 @@ public class PlayerCombat : MonoBehaviour
         if (GameManager.Instance.CurrentState != GameState.Playing) return;
 
         var gm = GameManager.Instance;
+        var powerUpHandler = PowerUpHandler.Instance;
         Vector3 basePos = gm.harry != null ? gm.harry.position : transform.position;
 
         bool facingLeft = gm.IsFacingLeft();
         bool up = gm.Up;
         bool salto = gm.salto;
-        bool powerupEscoba = gm.powerupescobabool;
-        bool powerupBuck = gm.powerupbuckbeakbool;
+        bool powerupEscoba = powerUpHandler.PowerupEscobaBool;
+        bool powerupBuck = powerUpHandler.PowerupBuckbeakBool;
 
         // Cuando no hay powerups de movimiento
         if (!powerupEscoba && !powerupBuck)

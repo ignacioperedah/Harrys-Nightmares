@@ -17,8 +17,8 @@ public class AudioManager : MonoBehaviour
 
     [Header("Mixer (optional)")]
     [SerializeField] private AudioMixer audioMixer;
-    [SerializeField] private string musicMixerParam = "MusicVolume"; // optional exposed param
-    [SerializeField] private string sfxMixerParam = "SFXVolume";     // optional exposed param
+    [SerializeField] private string musicMixerParam = "MusicVolume";
+    [SerializeField] private string sfxMixerParam = "SFXVolume";
 
     [Header("Audio Sources")]
     [SerializeField] private AudioSource musicSource;
@@ -27,7 +27,6 @@ public class AudioManager : MonoBehaviour
     [Header("Clips")]
     [SerializeField] private List<ClipEntry> clips = new List<ClipEntry>();
 
-    // Internal lookup for fast access
     private Dictionary<string, ClipEntry> _clipMap;
 
     private const string VolumePrefKey = "volumenAudio";
@@ -38,6 +37,9 @@ public class AudioManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+            // Desanclar del padre antes de DontDestroyOnLoad:
+            // DontDestroyOnLoad solo funciona en GameObjects raíz.
+            transform.SetParent(null);
             DontDestroyOnLoad(gameObject);
             Initialize();
         }
@@ -49,7 +51,6 @@ public class AudioManager : MonoBehaviour
 
     private void Initialize()
     {
-        // Build lookup
         _clipMap = new Dictionary<string, ClipEntry>();
         foreach (var ce in clips)
         {
@@ -57,7 +58,6 @@ public class AudioManager : MonoBehaviour
             if (!_clipMap.ContainsKey(ce.name)) _clipMap.Add(ce.name, ce);
         }
 
-        // Ensure AudioSources exist
         if (musicSource == null)
         {
             musicSource = gameObject.AddComponent<AudioSource>();
@@ -72,7 +72,6 @@ public class AudioManager : MonoBehaviour
             sfxSource.playOnAwake = false;
         }
 
-        // Load saved volume (default 0.5)
         _volume = PlayerPrefs.GetFloat(VolumePrefKey, 0.5f);
         ApplyVolumeToSystem(_volume);
     }
@@ -84,7 +83,6 @@ public class AudioManager : MonoBehaviour
         return ce;
     }
 
-    // Play short SFX; supports overlapping using PlayOneShot
     public void PlaySFX(string name)
     {
         var ce = GetClip(name);
@@ -92,7 +90,6 @@ public class AudioManager : MonoBehaviour
         sfxSource.PlayOneShot(ce.clip, ce.volume);
     }
 
-    // Play music (single channel). Calling again replaces current music.
     public void PlayMusic(string name, bool loop = true)
     {
         var ce = GetClip(name);
@@ -103,7 +100,6 @@ public class AudioManager : MonoBehaviour
         musicSource.Play();
     }
 
-    // Stop currently playing music (optionally only if matches name)
     public void StopMusic(string name = null)
     {
         if (musicSource == null) return;
@@ -117,7 +113,6 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // Pause/resume music channel
     public void ToggleMusic(bool pause)
     {
         if (musicSource == null) return;
@@ -125,7 +120,6 @@ public class AudioManager : MonoBehaviour
         else musicSource.UnPause();
     }
 
-    // Global volume control. Persists to PlayerPrefs and updates AudioListener and mixer if present.
     public void SetVolume(float val)
     {
         _volume = Mathf.Clamp01(val);
@@ -134,27 +128,20 @@ public class AudioManager : MonoBehaviour
         ApplyVolumeToSystem(_volume);
     }
 
-    public float GetVolume()
-    {
-        return _volume;
-    }
+    public float GetVolume() => _volume;
 
     private void ApplyVolumeToSystem(float val)
     {
-        // Update AudioListener global volume
         AudioListener.volume = val;
 
-        // If an AudioMixer is provided, optionally set exposed params (assumes exposed in mixer)
         if (audioMixer != null)
         {
-            // Convert linear [0,1] to mixer dB (-80..0) for a reasonable mapping
             float dB = Mathf.Lerp(-80f, 0f, val);
             if (!string.IsNullOrEmpty(musicMixerParam)) audioMixer.SetFloat(musicMixerParam, dB);
-            if (!string.IsNullOrEmpty(sfxMixerParam)) audioMixer.SetFloat(sfxMixerParam, dB);
+            if (!string.IsNullOrEmpty(sfxMixerParam))   audioMixer.SetFloat(sfxMixerParam, dB);
         }
 
-        // Also adjust source volumes so PlayOneShot respects overall volume
         if (musicSource != null) musicSource.volume = val;
-        if (sfxSource != null) sfxSource.volume = val;
+        if (sfxSource   != null) sfxSource.volume   = val;
     }
 }

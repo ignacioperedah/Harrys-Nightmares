@@ -74,9 +74,11 @@ public class PowerUpSpawner : MonoBehaviour
         // vida siempre permitida
         candidates.Add(0);
 
+        var powerUpHandler = PowerUpHandler.Instance;
+
         // Si cualquiera de los powerups de "movimiento" está activo en el juego, no añadir
-        bool movementPowerupActive = GameManager.Instance != null &&
-            (GameManager.Instance.powerupescobabool || GameManager.Instance.powerupbuckbeakbool);
+        bool movementPowerupActive = powerUpHandler != null &&
+            (powerUpHandler.PowerupEscobaBool || powerUpHandler.PowerupBuckbeakBool);
 
         // Evitar spawnear Escoba/BuckBeak/Patronus si ya hay una instancia registrada en la lista.
         // Recorrido único de la lista para calcular los tres flags a la vez.
@@ -100,7 +102,7 @@ public class PowerUpSpawner : MonoBehaviour
         }
 
         // Si no hay Patronus activo ni uno ya cayendo, permitir Patronus
-        bool superPatronusActive = GameManager.Instance != null && GameManager.Instance.superpatronus;
+        bool superPatronusActive = GameManager.Instance != null &&  powerUpHandler.PowerUpPatronusBool;
         if (!superPatronusActive && !patronusInScene)
         {
             candidates.Add(2); // patronus

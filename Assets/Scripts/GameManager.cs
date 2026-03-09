@@ -1,9 +1,13 @@
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
-using System.Collections;
+
 /// <summary>
-/// GameManager centralizado. La lógica de audio se ha movido a AudioManager.
+/// GameManager centralizado. Responsabilidad única: FSM del juego, score, vidas y dificultad.
+/// - Audio    → AudioManager
+/// - UI       → UIManager  (via eventos OnScoreChanged / OnLivesChanged / OnStateChanged)
+/// - Powerups → PowerUpHandler (timers, bools y contadores)
+/// - Animaciones / física del jugador → PlayerController
 /// </summary>
 public enum GameState
 {
@@ -12,68 +16,64 @@ public enum GameState
     Paused,
     GameOver
 }
+
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    // ── Eventos estáticos de dominio ──────────────────────────────────────────
+    public static event Action<int>       OnScoreChanged;
+    public static event Action<int>       OnLivesChanged;
+    public static event Action<GameState> OnStateChanged;
+
+    // ── Referencias de escena ─────────────────────────────────────────────────
+    /// <summary>
+    /// Transform del jugador. Permanece aquí como punto de acceso global
+    /// para sistemas externos (Dementor, PlayerCombat, spawners).
+    /// </summary>
     public Transform harry;
     public GameObject dementor;
-    public GameObject menuOptions;
-    // moved power-up prefabs to PowerUpSpawner
-    [SerializeField] private PowerUpSpawner powerUpSpawner;
-    public GameObject harrypatronus;
-    public GameObject patronusgrande;
-    public GameObject bJump;
-    public GameObject bSpell;
-    public Text contadorescoba;
-    public Text scoremuerte;
-    public Text Hscore;
-    // audio moved to AudioManager
-    public Animator animHarry;
-    public Rigidbody2D rbHarry;
-    public SpriteRenderer RendHarry;
-    // removed audiohit, audioEscoba, audioPatronus references from GameManager
 
-    public bool exit = false;
-    public bool reset = false;
-    public bool powerupescobabool = false;
-    public bool powerupbuckbeakbool = false;
-    public bool cancelvideo = false;
-    public bool repeatvideo = false;
-    public bool superpatronus = false;
+    [SerializeField] private PowerUpSpawner powerUpSpawner;
+    [SerializeField] private EnemySpawner   spawner;
 
     [Header("Difficulty")]
-    [SerializeField] private DifficultyConfig difficultyConfig; // ScriptableObject con escalones
+    [SerializeField] private DifficultyConfig difficultyConfig;
 
-    bool goLeft = true;
-    bool goRight = false;
+    // ── Estado de flags ───────────────────────────────────────────────────────
+    public bool exit        = false;
+    public bool reset       = false;
+    public bool cancelvideo = false;
+    public bool repeatvideo = false;
+
+    // ── Orientación del jugador ───────────────────────────────────────────────
+    private bool _goLeft = true;
 
     /// <summary>
-    /// Establece la orientaciÃ³n del jugador (true = izquierda).
-    /// PlayerController llamarÃ¡ a esto para mantener la Ãºnica fuente de verdad.
+    /// Establece la orientación del jugador (true = izquierda).
+    /// PlayerController llama a esto para mantener la única fuente de verdad.
+    /// El Animator se actualiza directamente en PlayerController.
     /// </summary>
     public void SetFacing(bool left)
     {
-        goLeft = left;
-        goRight = !left;
-        if (animHarry != null) animHarry.SetBool("goLeft", left);
+        _goLeft = left;
+        // La sincronización del Animator queda en PlayerController.SyncFacing()
     }
 
-    public bool IsFacingLeft() => goLeft;
+    public bool IsFacingLeft() => _goLeft;
 
-    public bool Up = false;
+    public bool Up    = false;
     public bool salto = false;
 
     public byte ActDemen = 0;
-    // ya no usamos ActPowerUp como lock; se gestiona con _lastPowerupSpawnScore
-    [SerializeField] int delay = 2000;
+
+    [SerializeField] private int delay = 2000;
     public int highscore;
     public int highS;
     public Vector3 vector;
-    [SerializeField] private EnemySpawner spawner;
-    private int _score = 0;
 
-    // Evita spawn duplicado por el mismo valor de score mÃºltiplo de 10
+    // ── Score ─────────────────────────────────────────────────────────────────
+    private int _score = 0;
     private int _lastPowerupSpawnScore = -1;
 
     public int score
@@ -82,15 +82,12 @@ public class GameManager : MonoBehaviour
         set
         {
             _score = value;
-            // Actualizaciones relacionadas con score
             UpdateDifficulty();
             if (spawner != null) spawner.UpdateSpawnRate(delay);
-            if (UIManager.Instance != null) UIManager.Instance.UpdateScore(_score);
+            OnScoreChanged?.Invoke(_score);
 
-            // Spawn de powerup cuando score es mÃºltiplo de 10 (y no 0).
             if (_score != 0 && _score % 10 == 0)
             {
-                // Solo spawnear una vez para ese valor de score
                 if (_lastPowerupSpawnScore != _score)
                 {
                     _lastPowerupSpawnScore = _score;
@@ -99,18 +96,25 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                // reset para futuros mÃºltiplos
                 _lastPowerupSpawnScore = -1;
             }
         }
     }
-    public int vidas = 1;
-    public float contador = 20.0f;
-    public float contadorbuckbeak = 15.0f;
-    public float contadorpatronus = 10.0f;
-    public float transparenteHarry = 1;
 
-    // FSM state
+    // ── Vidas ─────────────────────────────────────────────────────────────────
+    private int _vidas = 1;
+    public int vidas
+    {
+        get => _vidas;
+        set
+        {
+            if (_vidas == value) return;
+            _vidas = value;
+            OnLivesChanged?.Invoke(_vidas);
+        }
+    }
+
+    // ── FSM ───────────────────────────────────────────────────────────────────
     private GameState _currentState = GameState.Menu;
     public GameState CurrentState
     {
@@ -119,23 +123,18 @@ public class GameManager : MonoBehaviour
         {
             if (_currentState == value) return;
             _currentState = value;
+            OnStateChanged?.Invoke(_currentState);
             OnEnterState(_currentState);
         }
     }
-    // Indica que la pausa actual es por mostrar el MenuVideo (no por menÃº pausa normal)
+
     private bool _pausedForVideo = false;
 
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
     void Awake()
     {
-        // Singleton sencillo para acceder desde PlayerController u otros
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
     void OnDestroy()
@@ -143,48 +142,61 @@ public class GameManager : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
+    public void Start()
+    {
+        // harry se asigna desde el Inspector; como fallback buscamos por tag
+        if (harry == null)
+        {
+            var harryObj = GameObject.FindGameObjectWithTag("Harry");
+            if (harryObj != null) harry = harryObj.transform;
+        }
+
+        highscore = PlayerPrefs.GetInt("highscore", 0);
+        highS     = highscore;
+        Time.timeScale = 1f;
+
+        BroadcastCurrentValues();
+        CurrentState = GameState.Menu;
+    }
+
+    /// <summary>
+    /// Emite los eventos de score y vidas con los valores actuales sin modificarlos.
+    /// Garantiza que la UI refleje el estado inicial aunque el valor no haya cambiado.
+    /// </summary>
+    private void BroadcastCurrentValues()
+    {
+        OnScoreChanged?.Invoke(_score);
+        OnLivesChanged?.Invoke(_vidas);
+    }
+
+    // ── FSM: lógica de entrada por estado ─────────────────────────────────────
     void OnEnterState(GameState state)
     {
         switch (state)
         {
             case GameState.Menu:
                 Time.timeScale = 1f;
-                if (UIManager.Instance != null) UIManager.Instance.ShowStartMenu();
                 if (spawner != null) spawner.StopSpawning();
                 _pausedForVideo = false;
                 break;
+
             case GameState.Playing:
                 Time.timeScale = 1f;
-                // Aseguramos que cualquier estado de pausa se cierre antes de mostrar la UI de juego
-                if (UIManager.Instance != null) UIManager.Instance.SetPauseUI(false);
-                if (UIManager.Instance != null) UIManager.Instance.ShowGameplayUI();
                 if (spawner != null) spawner.StartSpawning(delay);
                 _pausedForVideo = false;
                 break;
+
             case GameState.Paused:
                 Time.timeScale = 0f;
-                if (_pausedForVideo)
-                {
-                    // Pausa provocada por menú de vídeo: mostrar sólo el MenuVideo
-                    if (UIManager.Instance != null) UIManager.Instance.SetPlayerActive(false);
-                    if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(true);
-                    if (UIManager.Instance != null) UIManager.Instance.SetMenuUIActive(false);
-                    if (spawner != null) spawner.StopSpawning();
-                }
-                else
-                {
-                    // Pausa normal: menú de pausa tradicional
-                    if (UIManager.Instance != null) UIManager.Instance.SetPauseUI(true);
-                    if (spawner != null) spawner.StopSpawning();
-                }
+                if (spawner != null) spawner.StopSpawning();
                 break;
+
             case GameState.GameOver:
-                // limpiar estado de juego, mostrar GameOver y detener spawner
                 Time.timeScale = 1f;
-                PowerUpHandler.Instance.CancelAll();
+                if (PowerUpHandler.Instance != null) PowerUpHandler.Instance.CancelAll();
                 Up = false;
-                if (animHarry != null) animHarry.SetBool("up", false);
-                // Stop Patronus music if playing
+                // Delegar reset de animaciones al PlayerController
+                if (PlayerController.Instance != null) PlayerController.Instance.ResetAnimator();
                 if (AudioManager.Instance != null) AudioManager.Instance.StopMusic("Patronus");
                 repeatvideo = false;
                 if (score > highS)
@@ -192,79 +204,44 @@ public class GameManager : MonoBehaviour
                     highS = score;
                     PlayerPrefs.SetInt("highscore", score);
                 }
-                if (UIManager.Instance != null) UIManager.Instance.ShowGameOver(score, highS);
                 if (spawner != null) spawner.StopSpawning();
-
-                // Eliminar powerups que están cayendo cuando entramos a GameOver
                 DestroyActivePowerups();
-
                 _pausedForVideo = false;
                 break;
         }
     }
-    public void Start()
-    {
-        animHarry = GameObject.FindGameObjectWithTag("Harry").GetComponent<Animator>();
-        rbHarry = GameObject.FindGameObjectWithTag("Harry").GetComponent<Rigidbody2D>();
-        RendHarry = GameObject.FindGameObjectWithTag("Harry").GetComponent<SpriteRenderer>();
-        highscore = PlayerPrefs.GetInt("highscore", 0);
-        highS = highscore;
-        Time.timeScale = 1f;
-        // Estado inicial
-        CurrentState = GameState.Menu;
-    }
-    // API: cambiar estados mediante métodos
-    public void StartGame()
-    {
-        CurrentState = GameState.Playing;
-    }
-    public void Exit()
-    {
-        exit = true;
-    }
+
+    // ── API pública de transiciones ───────────────────────────────────────────
+    public void StartGame()  => CurrentState = GameState.Playing;
+    public void Exit()       => exit = true;
+    public void Pause()      { _pausedForVideo = false; CurrentState = GameState.Paused; }
+    public void Resume()     => CurrentState = GameState.Playing;
+
     public void Restart()
     {
-        // Reinicio inmediato: ocultar menú de vídeo y pasar a Playing
-        if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(false);
-        // Restaurar variables de reinicio
-        score = 0;
-        vidas = 1;
-        if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(false);
-        if (UIManager.Instance != null) UIManager.Instance.SetButtonsActive(true);
-        if (UIManager.Instance != null) UIManager.Instance.SetPlayerActive(true);
+        _score  = 0;
+        _vidas  = 1;
         cancelvideo = false;
         repeatvideo = false;
-        // Posicionar jugador
+        _lastPowerupSpawnScore = -1;
+
+        BroadcastCurrentValues();
+
         if (harry != null) harry.SetPositionAndRotation(vector, Quaternion.identity);
         delay = 2000;
-        contador = 20;
-        powerupescobabool = false;
         if (spawner != null) spawner.StartSpawning(delay);
         CurrentState = GameState.Playing;
     }
-    public void Options()
-    {
-        if (UIManager.Instance != null) UIManager.Instance.ShowOptions(true);
-    }
-    public void OptionsBack()
-    {
-        if (UIManager.Instance != null) UIManager.Instance.ShowOptions(false);
-    }
+
+    public void Options()     => UIManager.Instance?.ShowOptions(true);
+    public void OptionsBack() => UIManager.Instance?.ShowOptions(false);
+
     public void ResetHS()
     {
         PlayerPrefs.SetInt("highscore", 0);
         highS = 0;
     }
-    public void Pause()
-    {
-        // pausa normal (menú pausa)
-        _pausedForVideo = false;
-        CurrentState = GameState.Paused;
-    }
-    public void Resume()
-    {
-        CurrentState = GameState.Playing;
-    }
+
     public void Home()
     {
         Time.timeScale = 1f;
@@ -278,173 +255,78 @@ public class GameManager : MonoBehaviour
 
     public void CancelVideo()
     {
-        cancelvideo = true;
-        if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(false);
-        if (UIManager.Instance != null) UIManager.Instance.SetPlayerActive(true);
-        if (UIManager.Instance != null) UIManager.Instance.SetMenuUIActive(true);
-        // ir directamente a GameOver al cancelar el video de continuidad
+        cancelvideo     = true;
+        _pausedForVideo = false;
         CurrentState = GameState.GameOver;
     }
+
     public void VideoReward()
     {
-        // Volver desde menuVideo: asegurar orientación a la izquierda antes de jugar
-        if (UIManager.Instance != null) UIManager.Instance.SetMenuVideoActive(false);
-        if (UIManager.Instance != null) UIManager.Instance.SetPlayerActive(true);
-        if (UIManager.Instance != null) UIManager.Instance.SetMenuUIActive(true);
         repeatvideo = true;
-        vidas = 1;
-        // forzar orientación inicial: disparo hacia la izquierda
-        goLeft = true;
-        goRight = false;
-        if (animHarry != null) animHarry.SetBool("goLeft", true);
+        _vidas = 0; // forzar diferencia para que el setter dispare el evento
+        vidas  = 1;
+        // Delegar orientación inicial al PlayerController
+        if (PlayerController.Instance != null) PlayerController.Instance.SyncFacing(true);
         if (harry != null) harry.SetPositionAndRotation(vector, Quaternion.identity);
-        // salir del modo "pausa por video"
         _pausedForVideo = false;
         CurrentState = GameState.Playing;
     }
 
-    //Velocidad de aparicion dementores
-    void UpdateDifficulty()
+    // ── Update ────────────────────────────────────────────────────────────────
+    public void Update()
     {
-        // Si hay DifficultyConfig asignado, usar sus escalones; si no, usar fallback interno
+        if (CurrentState != GameState.Playing) return;
+
+        if (vidas > 3) vidas = 3;
+
+        if (vidas <= 0 && !repeatvideo)
+        {
+            if (cancelvideo)
+                CurrentState = GameState.GameOver;
+            else
+            {
+                _pausedForVideo = true;
+                CurrentState = GameState.Paused;
+            }
+        }
+        else if (vidas <= 0 && repeatvideo)
+        {
+            CurrentState = GameState.GameOver;
+        }
+    }
+
+    // ── Dificultad ────────────────────────────────────────────────────────────
+    private void UpdateDifficulty()
+    {
         if (difficultyConfig != null && difficultyConfig.steps != null && difficultyConfig.steps.Length > 0)
         {
             foreach (var step in difficultyConfig.steps)
             {
-                if (score > step.threshold)
-                {
-                    delay = step.delay;
-                    break;
-                }
+                if (_score > step.threshold) { delay = step.delay; break; }
             }
         }
         else
         {
-            // Fallback a la tabla embebida previamente usada (mantener compatibilidad)
             var fallback = new (int threshold, int delay)[]
             {
-                (100, 113),
-                (90, 150),
-                (80, 200),
-                (70, 267),
-                (60, 356),
-                (50, 475),
-                (40, 633),
-                (30, 844),
-                (20, 1125),
-                (10, 1500)
+                (100, 113), (90, 150), (80, 200), (70, 267), (60, 356),
+                (50, 475),  (40, 633), (30, 844), (20, 1125),(10, 1500)
             };
             foreach (var step in fallback)
             {
-                if (score > step.threshold)
-                {
-                    delay = step.delay;
-                    break;
-                }
+                if (_score > step.threshold) { delay = step.delay; break; }
             }
         }
     }
 
-    /// <summary>
-    /// Elimina powerups activos que están cayendo (solo cuando entramos en GameOver según especificación).
-    /// Ahora utiliza el registro gestionado por PowerUpSpawner en lugar de búsquedas por tag.
-    /// </summary>
+    // ── Limpieza de powerups en GameOver ─────────────────────────────────────
     private void DestroyActivePowerups()
     {
         if (powerUpSpawner != null)
-        {
-            // Usar API del spawner: destruye y limpia su registro internamente
             powerUpSpawner.DestroyAllActivePowerups();
-        }
         else
-        {
-            // Si no hay spawner asignado, no intentamos búsquedas por tag (mejor mantener comportamiento predecible)
-            Debug.LogWarning("PowerUpSpawner no está asignado en GameManager. No se eliminaron powerups activos.");
-        }
+            Debug.LogWarning("PowerUpSpawner no está asignado en GameManager.");
 
-        // Aseguramos ocultar contador y audio asociado (ahora controlado por AudioManager)
-        if (UIManager.Instance != null) UIManager.Instance.SetCounterActive(false);
         if (AudioManager.Instance != null) AudioManager.Instance.StopMusic("Escoba");
-    }
-
-    // Update is called once per frame
-    public void Update()
-    {
-        // Quitado soporte de teclado. Todo el control se hace por UI/JS.
-        switch (CurrentState)
-        {
-            case GameState.Menu:
-                // la transición a Playing la debe manejar la UI -> StartGame()
-                break;
-            case GameState.Playing:
-                // Cachear singleton por frame para evitar múltiples búsquedas de tabla hash
-                var ui = UIManager.Instance;
-
-                // Actualizar UI y contadores (no inputs de teclado)
-                if (powerupescobabool)
-                {
-                    if (ui != null) ui.UpdateCounterText($"{contador}");
-                    if (ui != null) ui.SetJumpButtonActive(false);
-                }
-                else
-                {
-                    if (ui != null) ui.SetJumpButtonActive(true);
-                }
-                if (contador <= 0)
-                {
-                    powerupescobabool = false;
-                    if (ui != null) ui.SetCounterActive(false);
-                    contador = 20;
-                }
-                if (powerupbuckbeakbool)
-                {
-                    if (ui != null) ui.UpdateCounterText($"{contadorbuckbeak}");
-                    if (ui != null) ui.SetJumpButtonActive(false);
-                    if (ui != null) ui.SetSpellButtonActive(false);
-                }
-                if (!powerupbuckbeakbool && !powerupescobabool)
-                {
-                    if (ui != null) ui.SetJumpButtonActive(true);
-                    if (ui != null) ui.SetSpellButtonActive(true);
-                }
-                if (contadorbuckbeak <= 0)
-                {
-                    powerupbuckbeakbool = false;
-                    if (ui != null) ui.SetCounterActive(false);
-                    contadorbuckbeak = 15;
-                }
-                if (score % 10 != 0)
-                {
-                    // mantenemos _lastPowerupSpawnScore logic en setter; nada que hacer aquí
-                }
-
-                // Actualizar vidas en UI
-                if (ui != null) ui.UpdateLives(vidas);
-                if (vidas > 3) vidas = 3;
-                // Si se quedan sin vidas: mostrar menú de vídeo (pausa) o ir a GameOver según bandera
-                if (vidas <= 0 && !repeatvideo)
-                {
-                    if (cancelvideo)
-                    {
-                        CurrentState = GameState.GameOver;
-                    }
-                    else
-                    {
-                        _pausedForVideo = true;
-                        CurrentState = GameState.Paused;
-                    }
-                }
-                if (vidas <= 0 && repeatvideo)
-                {
-                    CurrentState = GameState.GameOver;
-                }
-                break;
-            case GameState.Paused:
-                // control por UI
-                break;
-            case GameState.GameOver:
-                // control por UI
-                break;
-        }
     }
 }

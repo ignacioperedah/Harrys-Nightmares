@@ -64,13 +64,14 @@ public class Dementor : MonoBehaviour
     void OnCollisionEnter2D(Collision2D collision)
     {
         var gm = GameManager.Instance;
+        var powerUpHandler = PowerUpHandler.Instance;
 
         if (collision.gameObject.CompareTag("Hechizo"))
         {
             GameManager.Instance.score++;
         }
 
-        if (collision.gameObject.CompareTag("Harry") && gm != null && gm.powerupbuckbeakbool == true)
+        if (collision.gameObject.CompareTag("Harry") && powerUpHandler != null && powerUpHandler.PowerupBuckbeakBool == true)
         {
             gm.score++;
             if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("Hit");

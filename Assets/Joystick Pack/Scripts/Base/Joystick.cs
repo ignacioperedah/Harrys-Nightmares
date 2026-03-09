@@ -128,8 +128,17 @@ public class Joystick: MonoBehaviour, IPointerDownHandler, IDragHandler, IPointe
         }
         return 0;
     }
-
     public virtual void OnPointerUp(PointerEventData eventData)
+    {
+        input = Vector2.zero;
+        handle.anchoredPosition = Vector2.zero;
+    }
+
+    /// <summary>
+    /// Resetea el joystick a su posición neutral sin necesitar un PointerEventData.
+    /// Útil para resetear el estado desde código (ej. al perder una vida).
+    /// </summary>
+    public virtual void ResetJoystick()
     {
         input = Vector2.zero;
         handle.anchoredPosition = Vector2.zero;
