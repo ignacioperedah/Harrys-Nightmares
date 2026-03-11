@@ -28,4 +28,15 @@ public class DynamicJoystick : Joystick
         background.gameObject.SetActive(false);
         base.OnPointerUp(eventData);
     }
+
+    /// <summary>
+    /// Extiende el reset base: oculta el background y cancela punteros activos,
+    /// replicando el comportamiento de OnPointerUp sin necesitar PointerEventData.
+    /// Necesario cuando el juego vuelve de pausa/video sin haber recibido OnPointerUp.
+    /// </summary>
+    public override void ResetJoystick()
+    {
+        base.ResetJoystick(); // input = zero + handle = zero + EventSystem deselect
+        background.gameObject.SetActive(false);
+    }
 }

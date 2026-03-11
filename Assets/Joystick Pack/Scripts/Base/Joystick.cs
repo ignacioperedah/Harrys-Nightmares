@@ -135,8 +135,8 @@ public class Joystick: MonoBehaviour, IPointerDownHandler, IDragHandler, IPointe
     }
 
     /// <summary>
-    /// Resetea el joystick a su posición neutral sin necesitar un PointerEventData.
-    /// Útil para resetear el estado desde código (ej. al perder una vida).
+    /// Resetea el joystick a su posición neutral desde código, sin PointerEventData.
+    /// Virtual para que subclases puedan extender el comportamiento (ej. ocultar background).
     /// </summary>
     public virtual void ResetJoystick()
     {

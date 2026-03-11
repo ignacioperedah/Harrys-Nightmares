@@ -15,7 +15,7 @@ public class VariableJoystick : Joystick
     public void SetMode(JoystickType joystickType)
     {
         this.joystickType = joystickType;
-        if(joystickType == JoystickType.Fixed)
+        if (joystickType == JoystickType.Fixed)
         {
             background.anchoredPosition = fixedPosition;
             background.gameObject.SetActive(true);
@@ -33,7 +33,7 @@ public class VariableJoystick : Joystick
 
     public override void OnPointerDown(PointerEventData eventData)
     {
-        if(joystickType != JoystickType.Fixed)
+        if (joystickType != JoystickType.Fixed)
         {
             background.anchoredPosition = ScreenPointToAnchoredPosition(eventData.position);
             background.gameObject.SetActive(true);
@@ -43,10 +43,25 @@ public class VariableJoystick : Joystick
 
     public override void OnPointerUp(PointerEventData eventData)
     {
-        if(joystickType != JoystickType.Fixed)
+        if (joystickType != JoystickType.Fixed)
             background.gameObject.SetActive(false);
 
         base.OnPointerUp(eventData);
+    }
+
+    /// <summary>
+    /// Extiende el reset base: en modos Floating/Dynamic oculta el background
+    /// y restaura su posición anclada a la original, igual que OnPointerUp.
+    /// En modo Fixed lo deja visible en su posición fija.
+    /// </summary>
+    public override void ResetJoystick()
+    {
+        base.ResetJoystick();
+        if (joystickType != JoystickType.Fixed)
+        {
+            background.anchoredPosition = fixedPosition;
+            background.gameObject.SetActive(false);
+        }
     }
 
     protected override void HandleInput(float magnitude, Vector2 normalised, Vector2 radius, Camera cam)

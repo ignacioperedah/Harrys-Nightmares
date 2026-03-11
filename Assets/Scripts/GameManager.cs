@@ -265,8 +265,13 @@ public class GameManager : MonoBehaviour
         repeatvideo = true;
         _vidas = 0; // forzar diferencia para que el setter dispare el evento
         vidas  = 1;
-        // Delegar orientación inicial al PlayerController
-        if (PlayerController.Instance != null) PlayerController.Instance.SyncFacing(true);
+        // Resetear joystick y orientación antes de reanudar
+        // VideoReward no pasa por Menu/GameOver, así que ResetPlayerToDefault
+        // no se dispara automáticamente desde DetectAndHandleStateChange.
+        if (PlayerController.Instance != null)
+        {
+            PlayerController.Instance.ResetForVideoReward();
+        }
         if (harry != null) harry.SetPositionAndRotation(vector, Quaternion.identity);
         _pausedForVideo = false;
         CurrentState = GameState.Playing;
