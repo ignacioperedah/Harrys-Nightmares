@@ -1,5 +1,12 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// Controlador del jugador.
+/// - Fuente de verdad para animaciones, física y orientación del sprite.
+/// - Expone ResetAnimator() y SyncFacing() para que GameManager delegue
+///   operaciones que antes hacía directamente sobre animHarry.
+/// - Usa Animator.StringToHash para eliminar magic strings y mejorar performance.
+/// </summary>
 [RequireComponent(typeof(Rigidbody2D), typeof(Animator))]
 public class PlayerController : MonoBehaviour
 {
