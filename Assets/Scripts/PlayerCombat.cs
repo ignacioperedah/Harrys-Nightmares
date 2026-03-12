@@ -135,6 +135,8 @@ public class PlayerCombat : MonoBehaviour
 
         var proj = instance.GetComponent<Projectile>();
         if (proj != null) proj.Init(dir);
+
+        FXSpawner.Instance?.PlaySpellSpawn(pos);
     }
 
     private GameObject GetInactiveFromPool(List<GameObject> pool)

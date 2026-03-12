@@ -14,7 +14,7 @@ public class Dementor : MonoBehaviour
     private static readonly int IdGoL = Animator.StringToHash(GameConstants.AnimatorParams.GoL);
 
     // Start is called before the first frame update
-    void Start()
+    public void Start()
     {
         if (GameManager.Instance != null && GameManager.Instance.harry != null)
             target = GameManager.Instance.harry;
@@ -28,7 +28,7 @@ public class Dementor : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    public void Update()
     {
         var gm = GameManager.Instance;
 
@@ -76,6 +76,7 @@ public class Dementor : MonoBehaviour
                 AudioManager.Instance.PlaySFX(GameConstants.Audio.Hit);
         }
 
+        FXSpawner.Instance?.PlayDementorDeath(transform.position);
         Destroy(gameObject);
     }
 

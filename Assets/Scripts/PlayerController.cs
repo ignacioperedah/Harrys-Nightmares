@@ -1,12 +1,5 @@
 ﻿using UnityEngine;
 
-/// <summary>
-/// Controlador del jugador.
-/// - Fuente de verdad para animaciones, física y orientación del sprite.
-/// - Expone ResetAnimator() y SyncFacing() para que GameManager delegue
-///   operaciones que antes hacía directamente sobre animHarry.
-/// - Usa Animator.StringToHash para eliminar magic strings y mejorar performance.
-/// </summary>
 [RequireComponent(typeof(Rigidbody2D), typeof(Animator))]
 public class PlayerController : MonoBehaviour
 {
@@ -115,8 +108,6 @@ public class PlayerController : MonoBehaviour
         anim.SetBool(IdDisparoL, false);
         anim.SetBool(IdDisparoR, false);
         anim.SetBool(IdSalto,    false);
-        // goLeft = true es el estado idle por defecto del personaje.
-        // Ponerlo en false deja al Animator sin ningún estado activo válido.
         anim.SetBool(IdGoLeft,   true);
     }
 
@@ -171,16 +162,33 @@ public class PlayerController : MonoBehaviour
         bool uiSpell      = PlayerCombat.Instance != null && PlayerCombat.Instance.ButtonSpell;
         bool spellPressed = uiSpell && !_previousSpellButton;
 
-        UpdateAnimations(spellPressed, up);
-
-        _previousSpellButton = uiSpell;
-
+        // ✅ Detectar cambio de estado de powerups ANTES de actualizar animaciones
         bool escobaActive = PowerupEscoba;
         bool buckActive   = PowerupBuckbeak;
 
-        if (!escobaActive && _wasPowerupEscoba)   restoreFromEscobaRequested   = true;
-        if (!buckActive   && _wasPowerupBuckbeak) restoreFromBuckbeakRequested = true;
+        // Si hubo transición, cambiar escala INMEDIATAMENTE (antes del Animator)
+        if (escobaActive && !_wasPowerupEscoba)
+        {
+            tr.localScale = escalaEscoba;
+        }
+        else if (buckActive && !_wasPowerupBuckbeak)
+        {
+            tr.localScale = escalaBuckbeak;
+        }
+        else if (!escobaActive && _wasPowerupEscoba)
+        {
+            tr.localScale = escalaNormal;
+            restoreFromEscobaRequested = true;
+        }
+        else if (!buckActive && _wasPowerupBuckbeak)
+        {
+            tr.localScale = escalaNormal;
+            restoreFromBuckbeakRequested = true;
+        }
 
+        UpdateAnimations(spellPressed, up);
+
+        _previousSpellButton = uiSpell;
         _wasPowerupEscoba   = escobaActive;
         _wasPowerupBuckbeak = buckActive;
 
@@ -196,21 +204,18 @@ public class PlayerController : MonoBehaviour
         if (restoreFromEscobaRequested)
         {
             restoreFromEscobaRequested = false;
-            tr.localScale   = escalaNormal;
             rb.gravityScale = 1f;
         }
 
         if (restoreFromBuckbeakRequested)
         {
             restoreFromBuckbeakRequested = false;
-            tr.localScale   = escalaNormal;
             rb.gravityScale = 1f;
         }
 
         if (resetDefaultsRequested)
         {
             resetDefaultsRequested = false;
-            tr.localScale   = escalaNormal;
             rb.gravityScale = 1f;
             rb.velocity     = Vector2.zero;
         }
@@ -226,10 +231,13 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+        // ✅ FixedUpdate se enfoca SOLO en física (velocidad, gravedad, posición)
         if (!PowerupEscoba && !PowerupBuckbeak)
         {
             float speed = VelocidadSuelo * (tr.position.y > 0.01f ? MultiplicadorAire : 1f);
             rb.velocity = new Vector2(horizontalInput * speed, rb.velocity.y);
+
+            if (rb.gravityScale != 1f) rb.gravityScale = 1f;
         }
         else
         {
@@ -237,7 +245,6 @@ public class PlayerController : MonoBehaviour
 
             if (PowerupEscoba)
             {
-                tr.localScale   = escalaEscoba;
                 rb.gravityScale = 0f;
                 rb.MovePosition(tr.position + new Vector3(
                     horizontalInput * EscobaMoveMultiplier * Time.fixedDeltaTime,
@@ -245,18 +252,11 @@ public class PlayerController : MonoBehaviour
             }
             else if (PowerupBuckbeak)
             {
-                tr.localScale   = escalaBuckbeak;
                 rb.gravityScale = 0f;
                 rb.MovePosition(tr.position + new Vector3(
                     horizontalInput * BuckbeakMoveMultiplier * Time.fixedDeltaTime,
                     verticalInput   * BuckbeakMoveMultiplier * Time.fixedDeltaTime, 0f));
             }
-        }
-
-        if (!PowerupEscoba && !PowerupBuckbeak)
-        {
-            if (tr.localScale   != (Vector3)escalaNormal) tr.localScale   = escalaNormal;
-            if (rb.gravityScale != 1f)                    rb.gravityScale = 1f;
         }
 
         previousPosition = tr.position;
@@ -314,7 +314,7 @@ public class PlayerController : MonoBehaviour
         ResetAnimator();
         _wasPowerupEscoba   = false;
         _wasPowerupBuckbeak = false;
-        SyncFacing(true);  // ← sincronizar el campo con lo que ResetAnimator() ya puso en el Animator
+        SyncFacing(true);
     }
 
     // ── Input UI ──────────────────────────────────────────────────────────────

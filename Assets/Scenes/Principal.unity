@@ -152,6 +152,7 @@ Transform:
   m_Children:
   - {fileID: 1234055650}
   - {fileID: 712737553}
+  - {fileID: 236084022}
   m_Father: {fileID: 341652560}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1521,6 +1522,53 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 5439053422235147903, guid: f7f4ecfc6b92186419cbc32be18a67e6, type: 3}
   m_PrefabInstance: {fileID: 2125141621}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &236084021
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 236084022}
+  - component: {fileID: 236084023}
+  m_Layer: 0
+  m_Name: FxSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &236084022
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 236084021}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 25118425}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &236084023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 236084021}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f99c7bbf2afcf2d4cb43933a760f03be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dementorDeathFXPrefab: {fileID: 7068083649854140181, guid: 597f455d8d4fc2e47b5b428321076f05, type: 3}
+  spellSpawnFXPrefab: {fileID: 830199061853946135, guid: c37582a9f39b1ba4fad985e55f3abbe3, type: 3}
+  dementorDeathPoolSize: 5
+  spellSpawnPoolSize: 3
 --- !u!1 &246840887
 GameObject:
   m_ObjectHideFlags: 0
@@ -2594,16 +2642,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   harrypatronus: {fileID: 234727796}
   patronusgrande: {fileID: 6177380430119845985, guid: cf4d0ed51ec6bfd4ab3cec5beea174d3, type: 3}
---- !u!95 &421426200 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 2515018191983416360, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
-  m_PrefabInstance: {fileID: 2515018192165110101}
-  m_PrefabAsset: {fileID: 0}
---- !u!50 &421426202 stripped
-Rigidbody2D:
-  m_CorrespondingSourceObject: {fileID: 2515018191983416361, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
-  m_PrefabInstance: {fileID: 2515018192165110101}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &421426203 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2515018191983416367, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
@@ -2615,11 +2653,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7fc999982c789894a96a6256db14357d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!212 &421426204 stripped
-SpriteRenderer:
-  m_CorrespondingSourceObject: {fileID: 2515018191983416365, guid: 9f05ad0560e31284ba59ec3bd118d9dd, type: 3}
-  m_PrefabInstance: {fileID: 2515018192165110101}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &436018860
 GameObject:
   m_ObjectHideFlags: 0
@@ -3168,6 +3201,7 @@ GameObject:
   - component: {fileID: 519420032}
   - component: {fileID: 519420031}
   - component: {fileID: 519420029}
+  - component: {fileID: 519420030}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -3183,6 +3217,22 @@ AudioListener:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 519420028}
   m_Enabled: 1
+--- !u!114 &519420030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519420028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6585be553ae790146bc60a538a6e8bf7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxOffset: 1
+  traumaDecay: 1.5
+  shakeFrequency: 25
+  traumaOnHit: 2
 --- !u!20 &519420031
 Camera:
   m_ObjectHideFlags: 0
@@ -7576,8 +7626,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97245478c1dc36f47a519cd3647ee14e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dementorPrefab: {fileID: 7090532858897402169, guid: 778faa16a7c52fd4e8ed32ea54688844, type: 3}
+  dementorPrefabs:
+  - {fileID: 7090532858897402169, guid: 778faa16a7c52fd4e8ed32ea54688844, type: 3}
+  - {fileID: 2115726955374354683, guid: 55aa3866e3c04aa409a6f464fbb65d83, type: 3}
+  - {fileID: 7286810138627550448, guid: 64da0ae8d76d3e0488f2325d146dc96d, type: 3}
   playerTransform: {fileID: 192189817}
+  waveConfig: {fileID: 11400000, guid: 77fd2b75fe9be954f87503f05b2bf568, type: 2}
   minDistanceToPlayer: 3
   maxDistanceX: 10
   minY: 0.05
@@ -12215,9 +12269,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   harry: {fileID: 192189817}
   dementor: {fileID: 7090532858897402169, guid: 778faa16a7c52fd4e8ed32ea54688844, type: 3}
-  animHarry: {fileID: 421426200}
-  rbHarry: {fileID: 421426202}
-  RendHarry: {fileID: 421426204}
   powerUpSpawner: {fileID: 712737552}
   spawner: {fileID: 1234055649}
   difficultyConfig: {fileID: 11400000, guid: 4db3b7806fdab844f900750b9fbcb717, type: 2}

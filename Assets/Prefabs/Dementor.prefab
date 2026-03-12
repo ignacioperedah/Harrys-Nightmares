@@ -10,11 +10,11 @@ GameObject:
   m_Component:
   - component: {fileID: 1394672705923162005}
   - component: {fileID: 1829658770208105685}
-  - component: {fileID: 1499124129154929359}
   - component: {fileID: 5285237871318975247}
   - component: {fileID: 4541445855421039500}
+  - component: {fileID: -5601399470195899782}
   m_Layer: 8
-  m_Name: Dementor 1
+  m_Name: Dementor
   m_TagString: Dementor
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -85,22 +85,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &1499124129154929359
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7090532858897402169}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2a17d9c97d52d2b4bb48b3fa9cbab869, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  speed: 1
-  kill: 1
-  kcount: 0
-  Hit: 0
 --- !u!95 &5285237871318975247
 Animator:
   serializedVersion: 5
@@ -164,3 +148,19 @@ PolygonCollider2D:
       - {x: 0.17999999, y: -0.24499999}
       - {x: 0.26999998, y: -0.205}
       - {x: 0.26999998, y: -0.095}
+--- !u!114 &-5601399470195899782
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7090532858897402169}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a17d9c97d52d2b4bb48b3fa9cbab869, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  speed: 1
+  kill: 1
+  kcount: 0
+  Hit: 0

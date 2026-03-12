@@ -91,23 +91,19 @@ public class Projectile : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Dementor"))
+        if (collision.gameObject.CompareTag(GameConstants.Tags.Dementor))
         {
             if (GameManager.Instance != null)
             {
                 if (AudioManager.Instance != null)
-                {
-                    AudioManager.Instance.PlaySFX("Hit");
-                }
+                    AudioManager.Instance.PlaySFX(GameConstants.Audio.Hit);
             }
 
-            // destruir el dementor, pero desactivar el proyectil para reutilización
             Destroy(collision.gameObject);
             DeactivateSelf();
             return;
         }
 
-        // colisión con otros colliders -> desactivar para pooling
         DeactivateSelf();
     }
 
