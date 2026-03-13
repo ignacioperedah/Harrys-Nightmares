@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using GoogleMobileAds.Api;
-using GoogleMobileAds;
 using System;
 
 public class AdsGoogle : MonoBehaviour
@@ -11,8 +10,6 @@ public class AdsGoogle : MonoBehaviour
     private RewardedAd reward;
 
     public GameManager gameManager;
-
-    
 
     // Start is called before the first frame update
     public void Start()
@@ -27,9 +24,15 @@ public class AdsGoogle : MonoBehaviour
     {
         string adUnitId = "ca-app-pub-6915944261825859/3981445176";
 
+        // Destruir banner anterior si existe
+        if (this.bannerView != null)
+        {
+            this.bannerView.Destroy();
+        }
+
         this.bannerView = new BannerView(adUnitId, AdSize.Banner, AdPosition.Bottom);
 
-        AdRequest request = new AdRequest.Builder().Build();
+        AdRequest request = new AdRequest();
         this.bannerView.LoadAd(request);
     }
 
@@ -37,40 +40,57 @@ public class AdsGoogle : MonoBehaviour
     {
         string adUnitId = "ca-app-pub-6915944261825859/5375011766";
 
+        // Limpiar anuncio anterior antes de cargar uno nuevo
+        if (this.reward != null)
+        {
+            this.reward.Destroy();
+            this.reward = null;
+        }
 
-        this.reward = new RewardedAd(adUnitId);
+        AdRequest request = new AdRequest();
 
-        this.reward.OnAdClosed += HandleRewardedAdClosed;
+        // En las versiones nuevas, se usa el método estático Load con un callback
+        RewardedAd.Load(adUnitId, request, (RewardedAd ad, LoadAdError error) =>
+        {
+            if (error != null || ad == null)
+            {
+                Debug.LogError("Rewarded ad failed to load an ad with error : " + error);
+                return;
+            }
 
-        this.reward.OnUserEarnedReward += HandleUserEarnedReward;
+            this.reward = ad;
 
-        this.reward.OnAdOpening += HandleRewardedAdOpening;
-
-        AdRequest request = new AdRequest.Builder().Build();
-        this.reward.LoadAd(request);
-
+            // Asignar los eventos actualizados al anuncio ya cargado
+            this.reward.OnAdFullScreenContentClosed += HandleRewardedAdClosed;
+            this.reward.OnAdFullScreenContentOpened += HandleRewardedAdOpening;
+        });
     }
 
     public void UserChoseToWatchAd()
     {
-        if (this.reward.IsLoaded())
+        // IsLoaded() fue reemplazado por CanShowAd()
+        if (this.reward != null && this.reward.CanShowAd())
         {
-            this.reward.Show();
+            this.reward.Show((Reward rewardAmount) =>
+            {
+                // Callback principal al obtener la recompensa
+                HandleUserEarnedReward();
+            });
         }
     }
 
-    public void HandleRewardedAdClosed(object sender, EventArgs args)
+    public void HandleRewardedAdClosed()
     {
-        this.RequestReward();
+        this.RequestReward(); // Precargar el siguiente anuncio
         gameManager.Resume();
-
     }
-    public void HandleRewardedAdOpening(object sender, EventArgs args)
+
+    public void HandleRewardedAdOpening()
     {
         gameManager.Pause();
     }
 
-    public void HandleUserEarnedReward(object sender, Reward args2)
+    public void HandleUserEarnedReward()
     {
         gameManager.VideoReward();
     }
