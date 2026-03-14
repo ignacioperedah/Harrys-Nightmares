@@ -49,6 +49,10 @@ public class ProjectileBig : MonoBehaviour
             if (AudioManager.Instance != null)
                 AudioManager.Instance.PlaySFX(GameConstants.Audio.Hit);
 
+            // Spawnea el efecto de muerte del Dementor
+            if (FXSpawner.Instance != null)
+                FXSpawner.Instance.PlayDementorDeath(other.transform.position);
+
             Destroy(other.gameObject);
         }
     }

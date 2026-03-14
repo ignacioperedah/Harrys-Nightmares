@@ -213,7 +213,22 @@ public class GameManager : MonoBehaviour
 
     // ── API pública de transiciones ───────────────────────────────────────────
     public void StartGame()  => CurrentState = GameState.Playing;
-    public void Exit()       => exit = true;
+    public void Exit()
+    {
+        exit = true;
+
+        // Limpieza de datos y estados
+        DestroyActivePowerups();
+        if (PowerUpHandler.Instance != null) PowerUpHandler.Instance.CancelAll();
+        if (PlayerController.Instance != null) PlayerController.Instance.ResetAnimator();
+        
+        // Salir de la aplicación
+        #if UNITY_EDITOR
+                UnityEditor.EditorApplication.isPlaying = false;
+        #else
+                Application.Quit();
+        #endif
+    }
     public void Pause()      { _pausedForVideo = false; CurrentState = GameState.Paused; }
     public void Resume()     => CurrentState = GameState.Playing;
 

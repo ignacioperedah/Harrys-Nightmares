@@ -112,15 +112,44 @@ public class UIManager : MonoBehaviour
     {
         SetCounterActive(isActive);
 
-        if (isActive) return;
+        var ph = PowerUpHandler.Instance;
+
+        if (isActive)
+        {
+            if (powerupName == "Buckbeak")
+            {
+                SetJumpButtonActive(false);
+                SetSpellButtonActive(false);
+            }
+            else if (powerupName == "Escoba")
+            {
+                SetJumpButtonActive(false);
+            }
+            return;
+        }
 
         // Al desactivarse, restaurar botones según el estado actual
-        var ph = PowerUpHandler.Instance;
         bool anyActive = ph != null && (ph.PowerupEscobaBool || ph.PowerupBuckbeakBool);
+        
         if (!anyActive)
         {
+            // Ningún powerup activo: restaurar todos los botones
             SetJumpButtonActive(true);
             SetSpellButtonActive(true);
+        }
+        else
+        {
+            // Si se desactiva uno pero el otro sigue activo, mantenemos la lógica correspondiente
+            if (ph.PowerupBuckbeakBool)
+            {
+                SetJumpButtonActive(false);
+                SetSpellButtonActive(false);
+            }
+            else if (ph.PowerupEscobaBool)
+            {
+                SetJumpButtonActive(false);
+                SetSpellButtonActive(true); // Escoba sí permite disparar
+            }
         }
     }
 
