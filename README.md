@@ -20,17 +20,15 @@ This project represents my full development lifecycle experience, from initial c
 * **Tools:** Git for version control.
 
 ## 📈 Refactoring Highlights
-# 🏗️ Architecture & Design Patterns
+### 🏗️ Architecture & Design Patterns
 * **Event-Driven UI (Observer Pattern):** Total decoupling between game logic and UI using C# Actions. The UIManager reactively updates to score, lives, and state changes emitted by the GameManager.
 * **Finite State Machine (FSM):** Implemented a robust FSM to manage global game flow (Menu, Playing, Paused, GameOver) and complex player states, replacing nested conditionals with a scalable state-based logic.
 * **Data-Driven Design:** Leveraged ScriptableObjects to externalize player statistics, difficulty curves, and wave definitions, allowing for game balancing without code recompilation.
-
-# ⚡ Performance Optimization
+### ⚡ Performance Optimization
 * **Custom Object Pooling:** Implemented a pooling system for projectiles and visual effects (FX) to minimize Instantiate/Destroy calls, significantly reducing Garbage Collector (GC) pressure.
 * **Physics Layer Matrix:** Optimized collision detection by migrating from manual Tag checks in Update to a native Layer-based filtering system, delegating interaction logic to Unity's low-level physics engine.
 * **Incremental Registry Cleanup:** Developed a stepwise "CleanUp" algorithm for entity registries to prevent memory leaks and maintain stable FPS during high-density enemy waves.
-
-# 🛡️ Robustness & Clean Code
+### 🛡️ Robustness & Clean Code
 * **Animator Hashing:** Improved animation performance by pre-calculating IDs via Animator.StringToHash, avoiding expensive string lookups in every frame .
 * **Centralized Constants:** Established a GameConstants static class to manage all Tags, Layers, and Audio identifiers, eliminating "Magic Strings" and ensuring type safety across the project.
 * **Inheritance & Abstraction:** Refactored power-up and entity logic using base classes and method overriding (virtual/override) to enforce the DRY (Don't Repeat Yourself) principle.
