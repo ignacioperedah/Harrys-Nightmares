@@ -25,9 +25,9 @@ The result is a project that covers the whole lifecycle: designing the mechanics
 
 ## 📸 Screenshots
 
-| Gameplay | Enemy waves | Power-ups |
-|:---:|:---:|:---:|
-| <img src="docs/screenshot-01.png" width="200"> | <img src="docs/screenshot-02.png" width="200"> | <img src="docs/screenshot-03.png" width="200"> |
+| Gameplay | Power-ups |
+|:---:|:---:|
+| <img src="docs/Screenshot_01.png" width="200"> | <img src="docs/Screenshot_02.png" width="200"> |
 
 ## 🚀 The Journey
 
