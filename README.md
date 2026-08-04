@@ -8,7 +8,7 @@
 > A casual shoot'em up for Android — dodge your enemies, survive the waves, and beat your friends' high score.
 
 <p align="center">
-  <img src="docs/gameplay.gif" alt="Harry's Nightmares gameplay" width="320">
+  <img src="docs/gameplay.gif" alt="Harry's Nightmares gameplay">
 </p>
 
 <p align="center">
